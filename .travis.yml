@@ -1,0 +1,38 @@
+language: nix
+
+os:
+  - linux
+
+env:
+  - EMACS_CI=emacs-26-3
+
+branches:
+  only:
+    - master
+
+before_install:
+  - ./scripts/travis
+  - openssl aes-256-cbc -K $encrypted_dd2e0efd98dd_key -iv $encrypted_dd2e0efd98dd_iv -in .travis/id_rsa_travis.enc -out ~/.ssh/id_rsa -d
+  - chmod 600 ~/.ssh/id_rsa
+  - eval $(ssh-agent)
+  - ssh-add ~/.ssh/id_rsa
+  - cp .travis/ssh_config ~/.ssh/config
+  
+cache:
+  directories:
+    - node_modules
+    
+install:
+  - npm install hexo-cli -g
+  - npm install
+
+script:
+  - source ~/.nix-profile/etc/profile.d/nix.sh
+  - hexo clean
+  - hexo generate
+  - hexo deploy
+
+after_success:
+  - git config --global user.name 'neo'
+  - git config --global user.email 'sjkyspa@gmail.com'
+  - hexo deploy

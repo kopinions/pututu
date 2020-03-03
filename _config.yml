@@ -95,10 +95,11 @@ ignore:
 ## Themes: https://hexo.io/themes/
 theme: inside
 
-# Deployment
-## Docs: https://hexo.io/docs/deployment.html
 deploy:
-  type: ''
+  type: git
+  repo:
+    github: https://github.com/kopinions/pututu.git
+  branch: gh-pages
 
 org:
   debug: true
