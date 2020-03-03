@@ -1,0 +1,550 @@
+#+TITLE:  Mesa meson 构建系统初探
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
+#+DATE: <2020-02-15 12:40:20>
+#+LAYOUT: post
+#+EXCERPT:  meson 是一个新的构建工具。meson 提供一套新的 DSL 用来描述我们的项目结构，从而能达到简化我们构建脚本的目的。
+#+DESCRIPTION: meson 是一个新的构建工具。meson 提供一套新的 DSL 用来描述我们的项目结构，从而能达到简化我们构建脚本的目的。
+#+TAGS: OpenGL graphics mesa
+#+CATEGORIES: OpenGL mesa
+
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+LATEX_HEADER: \usepackage{xeCJK}
+#+LATEX_HEADER: \setCJKmainfont{Heiti SC}
+
+#+BEGIN_SRC shell :exports none :results none
+mkdir -p ./mesa-egl
+#+END_SRC
+** mesa egl 入门
+*** EGL 根据编译和环境变量加载指定的驱动
+  #+BEGIN_SRC dot :file find_dri.png :exports results
+    digraph G {
+	compound =true;
+	app -> XOpenDisplay;
+	app -> eglGetDisplay;
+
+	subgraph cluster_0 {
+	    _eglGetNativePlatform;
+	    _eglGetNativePlatform -> _eglGetNativePlatformFromEnv [label="EGL_PLATFORM, EGL_DISPLAY"];
+	    _eglGetNativePlatform -> _eglNativePlatformDetectNativeDisplay [label="没有找到环境变量"];
+	    _eglGetNativePlatform -> default[label="如果都没有找到\n默认_EGL_NATIVE_PLATFORM\n 该变量通过-DEGL_NATIVE_PLATFORM指定\n 默认meson_options.txt 中platform 第一个元素"];
+	}
+	eglGetDisplay -> _eglGetNativePlatform;
+
+	eglGetDisplay -> _eglFindDisplay[label="disp.Platform=plat, \ndisp->PlatformDisplay = plat_dpy"];
+	eglGetDisplay -> _eglGetDisplayHandle;
+
+	app -> eglInitialize;
+	subgraph cluster_1 {
+	    _eglMatchDriver -> _eglMatchAndInitialize [label="根据LIBGL_ALWAYS_SOFTWARE环境变量\n查找合适的驱动"];
+	    _eglMatchDriver -> _eglMatchAndInitialize [label="强制使用软件渲染\n再次寻找合适的driver"];
+	    _eglMatchAndInitialize -> _eglGetDriver;
+	    _eglGetDriver -> _eglInitDriver[label="初始化驱动hook函数"];
+	    _eglMatchAndInitialize -> dri2_initialize;
+	    dri2_initialize -> dri2_initialize_x11[label="根据platform进行switch\nsurfaceless|device|x11|drm|wayland|android"];
+
+	    dri2_get_xfb_connection;
+	    dri2_open_driver;
+	    loader_open_driver;
+	    dri2_bind_extension;
+	    _eglAddDevice
+	    dlopen;
+
+	    subgraph cluster_1_0 {
+		dri2_initialize_x11_dri3;
+		dri3_x11_connect;
+		dri2_load_driver_dri3;
+	    }
+	    subgraph cluster_1_1 {
+		dri2_initialize_x11_dri2;
+		dri2_x11_connect;
+		dri2_load_driver;
+	    }
+	    subgraph cluster_1_2 {
+		dri2_initialize_x11_swrast;
+		dri2_load_driver_swrast;
+	    }
+
+	    subgraph cluster_1_3 {
+		dri2_create_screen;
+		dri2_setup_extensions;
+		dri2_setup_screen;
+		dri2_x11_setup_swap_interval;
+		edge[style=invis]
+		dri2_create_screen -> dri2_setup_extensions -> dri2_setup_screen -> dri2_x11_setup_swap_interval;
+	    }
+
+	    edge[style=invis];
+	    {rank=same; dri2_get_xfb_connection -> dri3_x11_connect -> _eglAddDevice -> dri2_load_driver_dri3;}
+	    {rank=same; dri2_get_xfb_connection -> dri2_x11_connect -> _eglAddDevice -> dri2_load_driver;}
+	    {rank=same; dri2_get_xfb_connection -> _eglAddDevice -> dri2_load_driver_swrast;}
+	    {rank=same; dri2_initialize_x11_dri3 -> dri2_initialize_x11_dri2 -> dri2_initialize_x11_swrast;}
+	    {rank=same; dri2_load_driver_common -> dri2_create_screen -> dri2_setup_extensions -> dri2_setup_screen -> dri2_x11_setup_swap_interval;}
+
+	    edge[style=filled];
+	    rankdir=TB;
+	    dri2_initialize_x11 -> dri2_initialize_x11_dri3[label="meson中配置-DHAVE_DRI3\n使用dri3进行初始化"];
+	    dri2_initialize_x11 -> dri2_initialize_x11_dri2[label="dri3 初始失败"];
+	    dri2_initialize_x11 -> dri2_initialize_x11_swrast[label="dri2 初始化失败"];
+
+
+	    dri2_initialize_x11_dri3 -> {dri2_get_xfb_connection,  dri3_x11_connect, _eglAddDevice, dri2_load_driver_dri3};
+
+	    dri2_load_driver_dri3 -> dri2_load_driver_common[label="dri2_load_driver_common(dri3_driver_extensions)"];
+	    loader_open_driver -> dlopen[label="(/lib/x86_64-linux-gnu/dri/tls/xxx.so)"];
+
+	    dri2_initialize_x11_dri2 -> {dri2_get_xfb_connection, dri2_x11_connect, _eglAddDevice, dri2_load_driver};
+
+	    dri2_load_driver -> dri2_load_driver_common[label="dri2_load_driver_common(dri2_driver_extensions)"];
+
+	    loader_open_driver -> dlopen[label="/lib/x86_64-linux-gnu/dri/dri.so"]
+
+	    dri2_initialize_x11_swrast -> {dri2_get_xfb_connection, _eglAddDevice, dri2_load_driver_swrast};
+
+	    dri2_load_driver_swrast -> dri2_load_driver_common[label="dri2_load_driver_common(swrast_driver_extensions)"];
+
+	    loader_open_driver -> dlopen[label="/lib/x86_64-linux-gnu/dri/swrast.so"];
+	    dri2_load_driver_common -> dri2_open_driver;
+	    dri2_open_driver -> loader_open_driver;
+	    dri2_load_driver_common -> dri2_bind_extensions;
+
+	    node[shape=none, width=0, height=0, label=""];	  
+	    dri2_initialize_x11_dri3 -> dri2_create_screen[lhead=cluster_1_3];
+
+	    dri2_initialize_x11_dri2 -> dri2_create_screen[lhead=cluster_1_3];
+
+	    dri2_initialize_x11_swrast -> dri2_create_screen[lhead=cluter_1_3];
+
+    }
+    eglInitialize -> _eglMatchDriver;
+    }
+  #+END_SRC
+
+  #+RESULTS:
+  [[file:find_dri.png]]
+*** EGL 软件渲染（swrast)驱动加载过程
+因为 DRI 需要保证向后兼容的特性，所以在 dri2, 以及 dri3 中所有的特性都是通过 extension(扩展) 的方式添加的。所以这种情况下，加载完 extension
+后需要使用 extension 的接口来完成操作。所以在调用 ~loader_open_driver~ 后返回的是 extension. 
+#+BEGIN_SRC c :exports code
+/**
+ * Opens a DRI driver using its driver name, returning the __DRIextension
+ * entrypoints.
+ *
+ * \param driverName - a name like "i965", "radeon", "nouveau", etc.
+ * \param out_driver - Address where the dlopen() return value will be stored.
+ * \param search_path_vars - NULL-terminated list of env vars that can be used
+ * to override the DEFAULT_DRIVER_DIR search path.
+ */
+const struct __DRIextensionRec **
+loader_open_driver(const char *driver_name,
+                   void **out_driver_handle,
+                   const char **search_path_vars)
+#+END_SRC
+
+swrast 初始化过程的函数调用图如下所示
+
+#+BEGIN_SRC dot :file loader_open_driver.png :exports results
+  digraph G {
+      node[shape=plaintext]
+      dri2_initialize_x11_swrast -> {dri2_loader_driver_swrast, dri2_create_screen, dri2_setup_extensions};
+      dri2_loader_driver_swrast -> dri2_load_driver_common;
+      dri2_load_driver_common -> {dri2_open_driver, dri2_bind_extensions};
+      dri2_open_driver -> loader_open_driver;
+      loader_open_driver -> {dlopen, dlsym, get_extensions};
+      get_extensions[label="从 dri/swrast_dri.so 中获取到 symbol \n__driDriverGetExtensions_swrast 并执行"]
+      dri2_create_screen -> createNewScreen [label="dri2_egl_display(disp)->\nswrast->createNewScreen"];
+      createNewScreen -> driSWRastCreateNewScreen2;
+      driSWRastCreateNewScreen2 -> driCreateNewScreen2;
+      driCreateNewScreen2 -> drisw_init_screen [label="通过 globalDriverAPI\n找到galliumsw_driver_api\n找到drisw_init_screen"];
+      drisw_init_screen -> {pipe_loader_sw_probe_dri, dri_init_options, pipe_loader_create_screen};
+      pipe_loader_sw_probe_dri -> {pipe_loader_sw_probe_init_common, dri_create_sw_winsys};
+      pipe_loader_create_screen -> {pipe_loader_sw_create_screen};
+      pipe_loader_sw_create_screen -> sw_screen_create;
+      sw_screen_create -> debug_get_option [label="获取GALLIUM_DRIVER\n环境变量，并加载"]
+      sw_screen_create -> sw_screen_create_named [label="driver=llvmpipe"];
+      sw_screen_create_named -> llvmpipe_create_screen;
+      
+  }
+#+END_SRC
+
+
+#+RESULTS:
+[[file:loader_open_driver.png]]
+
+对于每一个需要使用 ~loader_open_driver~ 加载的，名字为 ~driver_name~ 的驱动都会有一个接口 --- __driDriverGetExtensions_${driver_name}。通过 dlsym 加载 so 中
+对应的符号，并且执行当前符号对应的函数。从而获取到 ~driver_name~ 对应驱动所支持的 extension. 一个 driver 可能有多个 extension。 比如 swrast driver 的 extensions 定义如下。
+
+#+BEGIN_SRC c :exports code
+  const struct __DriverAPIRec galliumsw_driver_api = {
+     .InitScreen = drisw_init_screen,
+     .DestroyScreen = dri_destroy_screen,
+     .CreateContext = dri_create_context,
+     .DestroyContext = dri_destroy_context,
+     .CreateBuffer = drisw_create_buffer,
+     .DestroyBuffer = dri_destroy_buffer,
+     .SwapBuffers = drisw_swap_buffers,
+     .MakeCurrent = dri_make_current,
+     .UnbindContext = dri_unbind_context,
+     .CopySubBuffer = drisw_copy_sub_buffer,
+  };
+
+
+  #define __DRI_SWRAST "DRI_SWRast"
+  const __DRIswrastExtension driSWRastExtension = {
+      .base = { __DRI_SWRAST, 4 },
+
+      .createNewScreen            = driSWRastCreateNewScreen,
+      .createNewDrawable          = driCreateNewDrawable,
+      .createNewContextForAPI     = driCreateNewContextForAPI,
+      .createContextAttribs       = driCreateContextAttribs,
+      .createNewScreen2           = driSWRastCreateNewScreen2,
+  };
+
+  /* This is the table of extensions that the loader will dlsym() for. */
+  const __DRIextension *galliumsw_driver_extensions[] = {
+      &driCoreExtension.base,
+      &driSWRastExtension.base,
+      &driCopySubBufferExtension.base,
+      &gallium_config_options.base,
+      NULL
+  };
+
+  const __DRIextension **__driDriverGetExtensions_swrast(void);
+
+  PUBLIC const __DRIextension **__driDriverGetExtensions_swrast(void)
+  {
+     globalDriverAPI = &galliumsw_driver_api;
+     return galliumsw_driver_extensions;
+  }
+#+END_SRC
+
+eglInitialize 初始化的过程都是基于 EGLDriver 和 EGLDisplay. 很多的配置都在 _EGLDisplay 中， 但是在 egl 的具体驱动中，用到的数据结构大部分是 dri2_egl_xxx, 所以通过如下的宏定义，可以完成数据之间的转换。其中
+
+通过如下的代码定定义了 dri2_egl 的配置
+#+BEGIN_SRC c :exports code
+  /**
+   ,* Define an inline driver typecast function.
+   ,*
+   ,* Note that this macro defines a function and should not be ended with a
+   ,* semicolon when used.
+   ,*/
+  #define _EGL_DRIVER_TYPECAST(drvtype, egltype, code)           \
+     static inline struct drvtype *drvtype(const egltype *obj)   \
+     { return (struct drvtype *) code; }
+
+  /**
+   ,* Define the driver typecast functions for _EGLDriver, _EGLDisplay,
+   ,* _EGLContext, _EGLSurface, and _EGLConfig.
+   ,*
+   ,* Note that this macro defines several functions and should not be ended with
+   ,* a semicolon when used.
+   ,*/
+  #define _EGL_DRIVER_STANDARD_TYPECASTS(drvname)                            \
+     _EGL_DRIVER_TYPECAST(drvname ## _driver, _EGLDriver, obj)               \
+     /* note that this is not a direct cast */                               \
+     _EGL_DRIVER_TYPECAST(drvname ## _display, _EGLDisplay, obj->DriverData) \
+     _EGL_DRIVER_TYPECAST(drvname ## _context, _EGLContext, obj)             \
+     _EGL_DRIVER_TYPECAST(drvname ## _surface, _EGLSurface, obj)             \
+     _EGL_DRIVER_TYPECAST(drvname ## _config, _EGLConfig, obj)
+
+  _EGL_DRIVER_STANDARD_TYPECASTS(dri2_egl)
+#+END_SRC
+
+_EGL_DRIVER_STANDARD_TYPECASTS 宏最终会扩展处如下几个函数。从第二个函数的代码可以看出，dri2_egl_display 相关的信息全部保存在 _EGLDisplay 的 DriverData(void*) 中
+#+BEGIN_SRC c :exports code
+  static inline struct dri2_egl_driver* dri2_egl_driver(_EGLDriver * obj) {
+    return (struct dri2_egl_driver*) obj;
+  }
+
+  static inline struct dri2_egl_display* dri2_egl_display(_EGLDisplay * obj) {
+    return (struct dri2_egl_display*) obj -> DriverData;
+  }
+
+
+  static inline struct dri2_egl_context* dri2_egl_context(_EGLContext * obj) {
+    return (struct dri2_egl_context*) obj;
+  }
+
+  static inline struct dri2_egl_surface* dri2_egl_surface(_EGLSurface * obj) {
+    return (struct dri2_egl_surface*) obj;
+  }
+
+  static inline struct dri2_egl_config* dri2_egl_config(_EGLConfig * obj) {
+    return (struct dri2_egl_config*) obj;
+  }
+#+END_SRC
+
+其中 dri2_egl_display 的结构如下所示：
+#+BEGIN_SRC c :exports code
+  struct dri2_egl_display
+  {
+    const struct dri2_egl_display_vtbl *vtbl;
+
+    int                       dri2_major;
+    int                       dri2_minor;
+    __DRIscreen              *dri_screen;
+    bool                      own_dri_screen;
+    const __DRIconfig       **driver_configs;
+    void                     *driver;
+    const __DRIcoreExtension       *core;
+    const __DRIimageDriverExtension *image_driver;
+    const __DRIdri2Extension       *dri2;
+    const __DRIswrastExtension     *swrast;
+    const __DRI2flushExtension     *flush;
+    const __DRI2flushControlExtension *flush_control;
+    const __DRItexBufferExtension  *tex_buffer;
+    const __DRIimageExtension      *image;
+    const __DRIrobustnessExtension *robustness;
+    const __DRInoErrorExtension    *no_error;
+    const __DRI2configQueryExtension *config;
+    const __DRI2fenceExtension *fence;
+    const __DRI2bufferDamageExtension *buffer_damage;
+    const __DRI2blobExtension *blob;
+    const __DRI2rendererQueryExtension *rendererQuery;
+    const __DRI2interopExtension *interop;
+    const __DRIconfigOptionsExtension *configOptions;
+    const __DRImutableRenderBufferDriverExtension *mutable_render_buffer;
+    int                       fd;
+
+    /* dri2_initialize/dri2_terminate increment/decrement this count, so does
+     ,* dri2_make_current (tracks if there are active contexts/surfaces). */
+    int                       ref_count;
+
+    bool                      own_device;
+    bool                      invalidate_available;
+    int                       min_swap_interval;
+    int                       max_swap_interval;
+    int                       default_swap_interval;
+  #ifdef HAVE_DRM_PLATFORM
+    struct gbm_dri_device    *gbm_dri;
+  #endif
+
+    char                     *driver_name;
+
+    const __DRIextension    **loader_extensions;
+    const __DRIextension    **driver_extensions;
+
+  #ifdef HAVE_X11_PLATFORM
+    xcb_connection_t         *conn;
+    xcb_screen_t             *screen;
+    bool                     swap_available;
+  #ifdef HAVE_DRI3
+    bool                     multibuffers_available;
+    int                      dri3_major_version;
+    int                      dri3_minor_version;
+    int                      present_major_version;
+    int                      present_minor_version;
+    struct loader_dri3_extensions loader_dri3_ext;
+  #endif
+  #endif
+
+  #ifdef HAVE_WAYLAND_PLATFORM
+    struct wl_display        *wl_dpy;
+    struct wl_display        *wl_dpy_wrapper;
+    struct wl_registry       *wl_registry;
+    struct wl_drm            *wl_server_drm;
+    struct wl_drm            *wl_drm;
+    struct wl_shm            *wl_shm;
+    struct wl_event_queue    *wl_queue;
+    struct zwp_linux_dmabuf_v1 *wl_dmabuf;
+    struct u_vector          *wl_modifiers;
+    bool                      authenticated;
+    BITSET_DECLARE(formats, EGL_DRI2_MAX_FORMATS);
+    uint32_t                  capabilities;
+    char                     *device_name;
+  #endif
+
+  #ifdef HAVE_ANDROID_PLATFORM
+    const gralloc_module_t *gralloc;
+  #endif
+
+    bool                      is_render_node;
+    bool                      is_different_gpu;
+  };
+#+END_SRC
+
+一个 dri2_egl_display 可以通过不同的 extension 进行显示, 所以这种情况下需要将需要的 extension 绑定到 dri2_egl_display 上。通过如下的函数将
+matches 中要求的指定的 extension, 从 extensions 参数中绑定到 dri2_egl_display 中（EGLDisplay->DriverData）
+
+#+BEGIN_SRC c :exports code
+static EGLBoolean
+dri2_bind_extensions(struct dri2_egl_display *dri2_dpy,
+                     const struct dri2_extension_match *matches,
+                     const __DRIextension **extensions,
+                     bool optional)
+#+END_SRC
+
+在 swrast 驱动中，通过 dri2_bind_extensions 将 dri2_egl_display 中的 swrast, core 之类的绑定为 __DRIextension. ~__DRIextension~ 是所有 extension 的基类。
+比如 ~__DRIswrastExtension~ 的定义如下
+
+#+BEGIN_SRC c  :exports code
+  struct __DRIswrastExtensionRec {
+    __DRIextension base;
+
+    __DRIscreen *(*createNewScreen)(int screen,
+				    const __DRIextension **extensions,
+				    const __DRIconfig ***driver_configs,
+				    void *loaderPrivate);
+
+    __DRIdrawable *(*createNewDrawable)(__DRIscreen *screen,
+					const __DRIconfig *config,
+					void *loaderPrivate);
+
+    /* Since version 2 */
+    __DRIcontext *(*createNewContextForAPI)(__DRIscreen *screen,
+					    int api,
+					    const __DRIconfig *config,
+					    __DRIcontext *shared,
+					    void *data);
+
+    /**
+     ,* Create a context for a particular API with a set of attributes
+     ,*
+     ,* \since version 3
+     ,*
+     ,* \sa __DRIdri2ExtensionRec::createContextAttribs
+     ,*/
+    __DRIcontext *(*createContextAttribs)(__DRIscreen *screen,
+					  int api,
+					  const __DRIconfig *config,
+					  __DRIcontext *shared,
+					  unsigned num_attribs,
+					  const uint32_t *attribs,
+					  unsigned *error,
+					  void *loaderPrivate);
+
+    /**
+     ,* createNewScreen() with the driver extensions passed in.
+     ,*
+     ,* \since version 4
+     ,*/
+    __DRIscreen *(*createNewScreen2)(int screen,
+				     const __DRIextension **loader_extensions,
+				     const __DRIextension **driver_extensions,
+				     const __DRIconfig ***driver_configs,
+				     void *loaderPrivate);
+
+  };
+
+#+END_SRC
+
+所以在 dri2_bind_extensions 之后， 对于 dri2_egl_display 中，所有的字段，持有的都是子类的指针，这样就能调用到子类的对应函数中。比如 ~const __DRIswrastExtension *swrast;~
+
+通过 createNewScreen2 调用 pipe_loader_sw_probe_dri 从而能获取到，使用什么样的 ~pipe_loader_device~ 进行初始化。 其中 pipe_loader_device 定义如下
+#+BEGIN_SRC c :exports code
+  struct pipe_loader_ops {
+    struct pipe_screen *(*create_screen)(struct pipe_loader_device *dev,
+					 const struct pipe_screen_config *config);
+
+    const char *(*get_driconf_xml)(struct pipe_loader_device *dev);
+
+    void (*release)(struct pipe_loader_device **dev);
+  };
+
+  struct pipe_loader_device {
+    enum pipe_loader_device_type type;
+
+    union {
+      struct {
+	int vendor_id;
+	int chip_id;
+      } pci;
+    } u; /**< Discriminated by \a type */
+
+    char *driver_name;
+    const struct pipe_loader_ops *ops;
+
+    driOptionCache option_cache;
+    driOptionCache option_info;
+  };
+
+  struct pipe_loader_sw_device {
+     struct pipe_loader_device base;
+     const struct sw_driver_descriptor *dd;
+  #ifndef GALLIUM_STATIC_TARGETS
+     struct util_dl_library *lib;
+  #endif
+     struct sw_winsys *ws;
+     int fd;
+  };
+
+  struct sw_driver_descriptor
+  {
+    struct pipe_screen *(*create_screen)(struct sw_winsys *ws);
+    struct {
+      const char * const name;
+      struct sw_winsys *(*create_winsys)();
+    } winsys[];
+  };
+
+#+END_SRC
+
+对于软件渲染来讲，pipe_loader 创建屏幕的任务主要会由 ~pipe_loader_sw_create_screen~ 来完成。相应的 device 也使用上面所定义的 pipe_loader_sw_device (~pipe_loader_device~ 的子类)来进行初始化。
+在 pipe_loader_sw_create_screen 中相应的将创建 screen 的任务交给 sw_driver_descriptor 中的 create_screen.
+
+sw_driver_descriptor 通过如下的方式进行初始化
+
+#+BEGIN_SRC c :exports code
+  static const struct sw_driver_descriptor driver_descriptors = {
+     .create_screen = sw_screen_create,
+     .winsys = {
+  #ifdef HAVE_PIPE_LOADER_DRI
+	{
+	   .name = "dri",
+	   .create_winsys = dri_create_sw_winsys,
+	},
+  #endif
+  #ifdef HAVE_PIPE_LOADER_KMS
+	{
+	   .name = "kms_dri",
+	   .create_winsys = kms_dri_create_winsys,
+	},
+  #endif
+#+END_SRC
+
+对于软件渲染来讲创建过程再次被代理 --- sw_screen_create 进行处理。 最终调用 sw_screen_create_named 方法进行 screen 的创建。sw_screen_create_named 实现如下
+#+BEGIN_SRC c :exports code
+  static inline struct pipe_screen *
+  sw_screen_create_named(struct sw_winsys *winsys, const char *driver)
+  {
+    struct pipe_screen *screen = NULL;
+
+  #if defined(GALLIUM_LLVMPIPE)
+    if (screen == NULL && strcmp(driver, "llvmpipe") == 0)
+      screen = llvmpipe_create_screen(winsys);
+  #endif
+
+  #if defined(GALLIUM_VIRGL)
+    if (screen == NULL && strcmp(driver, "virpipe") == 0) {
+      struct virgl_winsys *vws;
+      vws = virgl_vtest_winsys_wrap(winsys);
+      screen = virgl_create_screen(vws, NULL);
+    }
+  #endif
+
+  #if defined(GALLIUM_SOFTPIPE)
+    if (screen == NULL && strcmp(driver, "softpipe") == 0)
+      screen = softpipe_create_screen(winsys);
+  #endif
+
+  #if defined(GALLIUM_SWR)
+    if (screen == NULL && strcmp(driver, "swr") == 0)
+      screen = swr_create_screen(winsys);
+  #endif
+
+    return screen;
+  }
+
+#+END_SRC
+
+最终会选择到相应的 gallium driver 上进行 screen 的创建工作。
+*** Gallium 加载过程
+#+BEGIN_SRC dot :file loader_open_driver.png :exports results
+  digraph G{
+    
+  }
+#+END_SRC

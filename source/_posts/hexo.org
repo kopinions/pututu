@@ -1,0 +1,31 @@
+#+TITLE: Hello World
+#+DATE: <2019-03-05 Sun 08:52>
+#+UPDATED: <2020-02-28 Fri 09:00>
+#+CATEGORIES: org-mode, hexo
+#+TAGS: hexo, org-mode
+#+LAYOUT: post
+*** hexo 安装和初始化
+#+BEGIN_SRC shell 
+npm install -g hexo-cli
+hexo init kopinions
+#+END_SRC
+*** org-mode 配置
+***** 安装 org-mode 的 render
+
+#+BEGIN_SRC shell
+npm install https://github.com/coldnew/hexo-renderer-org --save
+#+END_SRC
+***** 配置 org-mode 的配置
+#+BEGIN_SRC yaml
+  org:
+    emacs: /Applications/Emacs.app/Contents/MacOS/Emacs
+    emacsclient: /Applications/Emacs.app/Contents/MacOS/bin/emacsclient
+    cachedir: ./hexo-org-cache/
+    theme: tango-dark
+    highlight:
+      enable: true
+    org:
+      htmlize: false
+    common: |
+      #+OPTIONS: html-postamble:nil
+#+END_SRC
