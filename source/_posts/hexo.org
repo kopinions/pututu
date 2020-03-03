@@ -5,18 +5,18 @@
 #+TAGS: hexo, org-mode
 #+LAYOUT: post
 *** hexo 安装和初始化
-#+BEGIN_SRC shell 
+#+BEGIN_SRC shell :exports code :eval never
 npm install -g hexo-cli
 hexo init kopinions
 #+END_SRC
 *** org-mode 配置
 ***** 安装 org-mode 的 render
 
-#+BEGIN_SRC shell
+#+BEGIN_SRC shell :exports code :eval never
 npm install https://github.com/coldnew/hexo-renderer-org --save
 #+END_SRC
 ***** 配置 org-mode 的配置
-#+BEGIN_SRC yaml
+#+BEGIN_SRC yaml :exports code :eval never
   org:
     emacs: /Applications/Emacs.app/Contents/MacOS/Emacs
     emacsclient: /Applications/Emacs.app/Contents/MacOS/bin/emacsclient

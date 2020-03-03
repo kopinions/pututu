@@ -21,7 +21,7 @@ mkdir -p ./mesa-egl
 #+END_SRC
 ** mesa egl 入门
 *** EGL 根据编译和环境变量加载指定的驱动
-  #+BEGIN_SRC dot :file find_dri.png :exports results
+  #+BEGIN_SRC dot :file ./mesa-egl/find_dri.png :exports results
     digraph G {
 	compound =true;
 	app -> XOpenDisplay;
@@ -125,11 +125,11 @@ mkdir -p ./mesa-egl
   #+END_SRC
 
   #+RESULTS:
-  [[file:find_dri.png]]
+  [[file:./mesa-egl/find_dri.png]]
 *** EGL 软件渲染（swrast)驱动加载过程
 因为 DRI 需要保证向后兼容的特性，所以在 dri2, 以及 dri3 中所有的特性都是通过 extension(扩展) 的方式添加的。所以这种情况下，加载完 extension
 后需要使用 extension 的接口来完成操作。所以在调用 ~loader_open_driver~ 后返回的是 extension. 
-#+BEGIN_SRC c :exports code
+#+BEGIN_SRC c :exports code :eval never
 /**
  * Opens a DRI driver using its driver name, returning the __DRIextension
  * entrypoints.
@@ -147,7 +147,7 @@ loader_open_driver(const char *driver_name,
 
 swrast 初始化过程的函数调用图如下所示
 
-#+BEGIN_SRC dot :file loader_open_driver.png :exports results
+#+BEGIN_SRC dot :file ./mesa-egl/loader_open_driver.png :exports results
   digraph G {
       node[shape=plaintext]
       dri2_initialize_x11_swrast -> {dri2_loader_driver_swrast, dri2_create_screen, dri2_setup_extensions};
@@ -173,12 +173,12 @@ swrast 初始化过程的函数调用图如下所示
 
 
 #+RESULTS:
-[[file:loader_open_driver.png]]
+[[file:./mesa-egl/loader_open_driver.png]]
 
 对于每一个需要使用 ~loader_open_driver~ 加载的，名字为 ~driver_name~ 的驱动都会有一个接口 --- __driDriverGetExtensions_${driver_name}。通过 dlsym 加载 so 中
 对应的符号，并且执行当前符号对应的函数。从而获取到 ~driver_name~ 对应驱动所支持的 extension. 一个 driver 可能有多个 extension。 比如 swrast driver 的 extensions 定义如下。
 
-#+BEGIN_SRC c :exports code
+#+BEGIN_SRC c :exports code :eval never
   const struct __DriverAPIRec galliumsw_driver_api = {
      .InitScreen = drisw_init_screen,
      .DestroyScreen = dri_destroy_screen,
@@ -225,7 +225,7 @@ swrast 初始化过程的函数调用图如下所示
 eglInitialize 初始化的过程都是基于 EGLDriver 和 EGLDisplay. 很多的配置都在 _EGLDisplay 中， 但是在 egl 的具体驱动中，用到的数据结构大部分是 dri2_egl_xxx, 所以通过如下的宏定义，可以完成数据之间的转换。其中
 
 通过如下的代码定定义了 dri2_egl 的配置
-#+BEGIN_SRC c :exports code
+#+BEGIN_SRC c :exports code :eval never
   /**
    ,* Define an inline driver typecast function.
    ,*
@@ -255,7 +255,7 @@ eglInitialize 初始化的过程都是基于 EGLDriver 和 EGLDisplay. 很多的
 #+END_SRC
 
 _EGL_DRIVER_STANDARD_TYPECASTS 宏最终会扩展处如下几个函数。从第二个函数的代码可以看出，dri2_egl_display 相关的信息全部保存在 _EGLDisplay 的 DriverData(void*) 中
-#+BEGIN_SRC c :exports code
+#+BEGIN_SRC c :exports code :eval never
   static inline struct dri2_egl_driver* dri2_egl_driver(_EGLDriver * obj) {
     return (struct dri2_egl_driver*) obj;
   }
@@ -279,7 +279,7 @@ _EGL_DRIVER_STANDARD_TYPECASTS 宏最终会扩展处如下几个函数。从第�
 #+END_SRC
 
 其中 dri2_egl_display 的结构如下所示：
-#+BEGIN_SRC c :exports code
+#+BEGIN_SRC c :exports code :eval never
   struct dri2_egl_display
   {
     const struct dri2_egl_display_vtbl *vtbl;
@@ -370,7 +370,7 @@ _EGL_DRIVER_STANDARD_TYPECASTS 宏最终会扩展处如下几个函数。从第�
 一个 dri2_egl_display 可以通过不同的 extension 进行显示, 所以这种情况下需要将需要的 extension 绑定到 dri2_egl_display 上。通过如下的函数将
 matches 中要求的指定的 extension, 从 extensions 参数中绑定到 dri2_egl_display 中（EGLDisplay->DriverData）
 
-#+BEGIN_SRC c :exports code
+#+BEGIN_SRC c :exports code :eval never
 static EGLBoolean
 dri2_bind_extensions(struct dri2_egl_display *dri2_dpy,
                      const struct dri2_extension_match *matches,
@@ -381,7 +381,7 @@ dri2_bind_extensions(struct dri2_egl_display *dri2_dpy,
 在 swrast 驱动中，通过 dri2_bind_extensions 将 dri2_egl_display 中的 swrast, core 之类的绑定为 __DRIextension. ~__DRIextension~ 是所有 extension 的基类。
 比如 ~__DRIswrastExtension~ 的定义如下
 
-#+BEGIN_SRC c  :exports code
+#+BEGIN_SRC c  :exports code :eval never
   struct __DRIswrastExtensionRec {
     __DRIextension base;
 
@@ -435,7 +435,7 @@ dri2_bind_extensions(struct dri2_egl_display *dri2_dpy,
 所以在 dri2_bind_extensions 之后， 对于 dri2_egl_display 中，所有的字段，持有的都是子类的指针，这样就能调用到子类的对应函数中。比如 ~const __DRIswrastExtension *swrast;~
 
 通过 createNewScreen2 调用 pipe_loader_sw_probe_dri 从而能获取到，使用什么样的 ~pipe_loader_device~ 进行初始化。 其中 pipe_loader_device 定义如下
-#+BEGIN_SRC c :exports code
+#+BEGIN_SRC c :exports code :eval never
   struct pipe_loader_ops {
     struct pipe_screen *(*create_screen)(struct pipe_loader_device *dev,
 					 const struct pipe_screen_config *config);
@@ -488,7 +488,7 @@ dri2_bind_extensions(struct dri2_egl_display *dri2_dpy,
 
 sw_driver_descriptor 通过如下的方式进行初始化
 
-#+BEGIN_SRC c :exports code
+#+BEGIN_SRC c :exports code :eval never
   static const struct sw_driver_descriptor driver_descriptors = {
      .create_screen = sw_screen_create,
      .winsys = {
@@ -507,7 +507,7 @@ sw_driver_descriptor 通过如下的方式进行初始化
 #+END_SRC
 
 对于软件渲染来讲创建过程再次被代理 --- sw_screen_create 进行处理。 最终调用 sw_screen_create_named 方法进行 screen 的创建。sw_screen_create_named 实现如下
-#+BEGIN_SRC c :exports code
+#+BEGIN_SRC c :exports code :eval never
   static inline struct pipe_screen *
   sw_screen_create_named(struct sw_winsys *winsys, const char *driver)
   {
@@ -543,8 +543,11 @@ sw_driver_descriptor 通过如下的方式进行初始化
 
 最终会选择到相应的 gallium driver 上进行 screen 的创建工作。
 *** Gallium 加载过程
-#+BEGIN_SRC dot :file loader_open_driver.png :exports results
+#+BEGIN_SRC dot :file ./mesa-egl/gallium_deq.png :exports results
   digraph G{
-    
+  a;
   }
 #+END_SRC
+
+#+RESULTS:
+[[file:./mesa-egl/gallium_deq.png]]
