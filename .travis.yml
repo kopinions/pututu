@@ -12,10 +12,10 @@ branches:
 
 before_install:
   - ./scripts/travis
-  - openssl aes-256-cbc -K $encrypted_dd2e0efd98dd_key -iv $encrypted_dd2e0efd98dd_iv -in .travis/id_rsa_travis.enc -out ~/.ssh/id_rsa -d
-  - chmod 600 ~/.ssh/id_rsa
+  - openssl enc -aes-256-cbc -nosalt -d -K $ENCRYPT_KEY -iv $ENCRYPT_IV -in .travis/rsa.enc -out ~/.ssh/rsa
+  - chmod 600 ~/.ssh/rsa
   - eval $(ssh-agent)
-  - ssh-add ~/.ssh/id_rsa
+  - ssh-add ~/.ssh/rsa
   - cp .travis/ssh_config ~/.ssh/config
   
 cache:
