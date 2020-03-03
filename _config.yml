@@ -96,13 +96,9 @@ ignore:
 theme: inside
 
 deploy:
-  provider: pages
-  skip-cleanup: true
-  github-token: $GH_TOKEN
-  keep-history: true
-  on:
-    branch: master
-  local-dir: public
+  type: git
+  repo: git://github.com:kopinions/pututu.git
+  branch: gh-pages
 
 org:
   debug: true
