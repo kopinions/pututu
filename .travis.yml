@@ -23,6 +23,7 @@ cache:
     - node_modules
     
 install:
+  - git submodule update --init
   - npm install hexo-cli -g
   - npm install
 
