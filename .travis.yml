@@ -30,7 +30,6 @@ script:
   - source ~/.nix-profile/etc/profile.d/nix.sh
   - hexo clean
   - hexo generate
-  - hexo deploy
 
 after_success:
   - git config --global user.name 'neo'
