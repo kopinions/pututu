@@ -98,13 +98,13 @@ theme: inside
 deploy:
   type: git
   repo:
-    github: https://github.com/kopinions/pututu.git
+    github: git://github.com:kopinions/pututu.git
   branch: gh-pages
 
 org:
   debug: true
-  emacs: /Applications/Emacs.app/Contents/MacOS/Emacs
-  emacsclient: /Applications/Emacs.app/Contents/MacOS/bin/emacsclient
+  emacs: emacs
+  emacsclient: emacsclient
   cachedir: ./hexo-org-cache/
   theme: tango-dark
   highlight:
