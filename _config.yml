@@ -97,7 +97,8 @@ theme: inside
 
 deploy:
   type: git
-  repo: git://github.com:kopinions/pututu.git
+  repo:
+    github: git@github.com:kopinions/pututu.git
   branch: gh-pages
 
 org:

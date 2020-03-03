@@ -35,4 +35,4 @@ script:
 after_success:
   - git config --global user.name 'neo'
   - git config --global user.email 'sjkyspa@gmail.com'
-  - hexo deploy --debug
+  - hexo deploy
