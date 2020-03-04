@@ -24,7 +24,10 @@ mkdir -p ./mesa-egl
   #+BEGIN_SRC dot :file ./mesa-egl/find_dri.png :exports results
     digraph G {
 	compound =true;
-	graph [fontname="WenQuanYi Micro Hei"];
+	graph [
+	       fontname="WenQuanYi Micro Hei";
+	       charset = "UTF-8";
+	       ];
 	node [fontname="WenQuanYi Micro Hei"];
 	edge [fontname="WenQuanYi Micro Hei"];
 	app -> XOpenDisplay;

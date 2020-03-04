@@ -17,6 +17,7 @@ before_install:
   - eval $(ssh-agent)
   - ssh-add ~/.ssh/rsa
   - cp .travis/ssh_config ~/.ssh/config
+  - fc-list
     
 install:
   - git submodule update --init
