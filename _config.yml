@@ -3,11 +3,11 @@
 ## Source: https://github.com/hexojs/hexo/
 
 # Site
-title:  
-subtitle: ''
-description: ''
+title: 创意改变生活  
+subtitle: 为者常成，行者常至 
+description: 
 keywords:
-author: 孙建康
+author: neo
 language: cn
 timezone: ''
 
@@ -90,10 +90,7 @@ include:
 exclude:
 ignore:
 
-# Extensions
-## Plugins: https://hexo.io/plugins/
-## Themes: https://hexo.io/themes/
-theme: inside
+
 
 deploy:
   type: git
@@ -114,3 +111,46 @@ org:
   common: |
     #+OPTIONS: html-postamble:nil
     
+theme: inside
+theme_config:
+  profile:
+    email: rising.lambda@gmail.com
+    avatar: /images/avatar.png
+    bio: 为者常成，行者常至
+  favicon: /images/favicon.png
+  menu:
+    -
+      - 主页
+      - /
+    -
+      - 关于
+      - /about
+    -
+      - Github
+      - https://github.com/sjkyspa
+      - true
+  footer:
+    # 默认显示 @2019 • author，设置为 false 可隐藏。
+    copyright: '&copy; 2020 ❤️ <a href="">neo</a>'
+    # `由 Hexo 强力驱动` 字样，默认显示，设置为 false 可隐藏。
+    powered: false
+    # `主题 - Inside` 字样，默认显示，设置为 false 可隐藏。
+    theme: false
+    # 于最后一行添加自定义内容
+    custom: Hosted by <a target="_blank" href="">Github Pages</a>
+  sns:
+    -
+      - email 
+      - mailto:rising.lambda@gmail.com
+    -
+      - github 
+      - https://github.com/sjkyspa
+    -
+      - facebook
+      - https://www.facebook.com/rising.lambda
+    -
+      - weibo
+      - https://weibo.com/opinionworks/
+    -
+      - linkedin
+      - https://www.linkedin.com/in/%E5%AD%99%E5%BB%BA%E5%BA%B7/
