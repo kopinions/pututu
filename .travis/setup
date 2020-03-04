@@ -25,3 +25,6 @@ fi
 
 nix-env -i graphviz
 nix-env -i openssl 
+nix-env -iA nixpkgs.wqy_microhei
+mkdir -p ~/.local/share/fonts
+ln -sf ~/.nix-profile/share/fonts/ ~/.local/share/fonts/nix-fonts
