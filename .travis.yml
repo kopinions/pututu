@@ -17,10 +17,6 @@ before_install:
   - eval $(ssh-agent)
   - ssh-add ~/.ssh/rsa
   - cp .travis/ssh_config ~/.ssh/config
-  
-cache:
-  directories:
-    - node_modules
     
 install:
   - git submodule update --init
