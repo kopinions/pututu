@@ -24,6 +24,9 @@ mkdir -p ./mesa-egl
   #+BEGIN_SRC dot :file ./mesa-egl/find_dri.png :exports results
     digraph G {
 	compound =true;
+	graph [fontname="WenQuanYi Micro Hei"];
+	node [fontname="WenQuanYi Micro Hei"];
+	edge [fontname="WenQuanYi Micro Hei"];
 	app -> XOpenDisplay;
 	app -> eglGetDisplay;
 
@@ -149,7 +152,9 @@ swrast 初始化过程的函数调用图如下所示
 
 #+BEGIN_SRC dot :file ./mesa-egl/loader_open_driver.png :exports results
   digraph G {
-      node[shape=plaintext]
+      graph [fontname="WenQuanYi Micro Hei"];
+      node [fontname="WenQuanYi Micro Hei", shape=plaintext];
+      edge [fontname="WenQuanYi Micro Hei"];
       dri2_initialize_x11_swrast -> {dri2_loader_driver_swrast, dri2_create_screen, dri2_setup_extensions};
       dri2_loader_driver_swrast -> dri2_load_driver_common;
       dri2_load_driver_common -> {dri2_open_driver, dri2_bind_extensions};
@@ -167,7 +172,7 @@ swrast 初始化过程的函数调用图如下所示
       sw_screen_create -> debug_get_option [label="获取GALLIUM_DRIVER\n环境变量，并加载"]
       sw_screen_create -> sw_screen_create_named [label="driver=llvmpipe"];
       sw_screen_create_named -> llvmpipe_create_screen;
-      
+
   }
 #+END_SRC
 
