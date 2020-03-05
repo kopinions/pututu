@@ -1,6 +1,6 @@
 ---
 title: 当金数据遇到NGO
-date: <2014-08-04 22:55:20>
+date: 2014-08-04 22:55:20
 layout: post
 categories: business
 tags: business
