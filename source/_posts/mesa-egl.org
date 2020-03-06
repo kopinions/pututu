@@ -20,6 +20,28 @@
 mkdir -p ./mesa-egl
 #+END_SRC
 ** mesa egl 入门
+*** mesa stack
+#+BEGIN_SRC ditaa :file ./mesa-egl/mesa-stack.png :exports results
+  +------------------+
+  |                  |
+  |      APP         |   	
+  |                  |
+  +------------------+
+
+
+  +------------------+
+  |                  |
+  |       EGL        |
+  |                  |
+  +------------------+
+	
+  +------------------+
+  |                  |
+  |     EGL Driver   |   	
+  |                  |
+  +------------------+	
+#+END_SRC
+
 *** EGL 根据编译和环境变量加载指定的驱动
   #+BEGIN_SRC dot :file ./mesa-egl/find_dri.png :exports results
     digraph G {
@@ -553,9 +575,106 @@ sw_driver_descriptor 通过如下的方式进行初始化
 *** Gallium 加载过程
 #+BEGIN_SRC dot :file ./mesa-egl/gallium_deq.png :exports results
   digraph G{
-  a;
+  
   }
 #+END_SRC
 
 #+RESULTS:
 [[file:./mesa-egl/gallium_deq.png]]
+*** egl 函数调用分析
+egl 规范，由一些列的接口定义组成。在 mesa 的 egl 的实现中，egl 规范相关的定义在 _EGLDriver 结构体中。结构体的部分实际结构如下所示：
+#+BEGIN_SRC c :exports code :eval never
+  /**
+   ,* The API dispatcher jumps through these functions
+   ,*/
+  struct _egl_api
+  {
+    /* driver funcs */
+    EGLBoolean (*Initialize)(_EGLDriver *, _EGLDisplay *disp);
+    EGLBoolean (*Terminate)(_EGLDriver *, _EGLDisplay *disp);
+    const char *(*QueryDriverName)(_EGLDisplay *disp);
+    char *(*QueryDriverConfig)(_EGLDisplay *disp);
+
+    /* context funcs */
+    _EGLContext *(*CreateContext)(_EGLDriver *drv, _EGLDisplay *disp,
+				  _EGLConfig *config, _EGLContext *share_list,
+				  const EGLint *attrib_list);
+    EGLBoolean (*DestroyContext)(_EGLDriver *drv, _EGLDisplay *disp,
+				 _EGLContext *ctx);
+    /* this is the only function (other than Initialize) that may be called
+     ,* with an uninitialized display
+     ,*/
+    EGLBoolean (*MakeCurrent)(_EGLDriver *drv, _EGLDisplay *disp,
+			      _EGLSurface *draw, _EGLSurface *read,
+			      _EGLContext *ctx);
+
+    /* surface funcs */
+    _EGLSurface *(*CreateWindowSurface)(_EGLDriver *drv, _EGLDisplay *disp,
+					_EGLConfig *config, void *native_window,
+					const EGLint *attrib_list);
+    _EGLSurface *(*CreatePixmapSurface)(_EGLDriver *drv, _EGLDisplay *disp,
+					_EGLConfig *config, void *native_pixmap,
+					const EGLint *attrib_list);
+    _EGLSurface *(*CreatePbufferSurface)(_EGLDriver *drv, _EGLDisplay *disp,
+					 _EGLConfig *config,
+					 const EGLint *attrib_list);
+  }
+#+END_SRC
+
+mesa 中 egl 的实现有两种， 依据 dri 实现的 src/egl/drivers/egl_dri2.cpp, 和 基于 haiku 实现的 src/egl/drivers/haiku/egl_haiku.cpp
+**** eglInitialize 的调用链
+ #+BEGIN_SRC dot :file ./mesa-egl/mesa-draw.png :exports results
+  digraph G {
+      graph [fontname="WenQuanYi Micro Hei"];
+      node [fontname="WenQuanYi Micro Hei", shape=plaintext];
+      edge [fontname="WenQuanYi Micro Hei"];
+
+
+      subgraph cluster_init {
+	  dri2_init_screen -> dri2_init_screen_helper;
+	  dri2_init_screen_helper -> st_gl_api_create;
+	  st_gl_api_create -> "st_api.create_context = st_api_create_context"
+      }
+
+      "加载 i915_dri.so" -> "__driDriverGetExtensions_##drivername";
+      "__driDriverGetExtensions_##drivername" -> "globalDriverAPI=&galliumdrm_driver_api";
+  }
+#+END_SRC
+
+#+RESULTS:
+[[file:./mesa-egl/mesa-draw.png]]
+**** egl_dri2 eglCreateContext 调用链
+     
+#+BEGIN_SRC dot :file ./mesa-egl/mesa-eglCreateContext.png :exports results
+  digraph G {
+      graph [fontname="WenQuanYi Micro Hei"];
+      node [fontname="WenQuanYi Micro Hei", shape=plaintext];
+      edge [fontname="WenQuanYi Micro Hei"];
+
+      eglCreateContext -> "drv->API.CreateContext" -> dri2_create_context -> "dri2_egl_display->image_driver->createContextAttributes";
+      "dri2_egl_display->image_driver->createContextAttributes" -> driCreateContextAttributes;
+      driCreateContextAttributes -> "__DRIScreen->__DriverAPIRec->CreateContext";
+      "__DRIScreen->__DriverAPIRec->CreateContext" -> dri_create_context;
+      dri_create_context -> {"dri_screen->st_api->create_context", pp_init, hud_create};
+      "dri_screen->st_api->create_context" -> st_api_create_context -> "st_manager->pipe_screen->context_create" -> i915_context_create;
+      st_api_create_context -> st_create_context -> {st_init_driver_functions, _mesa_initialize_context, st_create_context_priv};
+      st_init_driver_functions -> {st_init_draw_functions, st_init_bufferobject_functions, "..."};
+      st_init_draw_functions -> "functions.Draw=st_draw_vbo";
+      _mesa_initialize_context -> {one_time_init, "gl_context->Driver = *driverFunctions", init_attrib_groups, "gl_context->_glapi_table=_mesa_alloc_dispatch_table"};
+      one_time_init -> _mesa_init_remap_table -> "driDispatchRemapTable[i:tablesize] = offset";
+      init_attrib_groups -> {_mesa_init_constants, _mesa_init_extensions, _mesa_init_bufferobjects, "...."};
+      "gl_context->_glapi_table=_mesa_alloc_dispatch_table" -> "_mesa_new_nop_table(dispatch_table_size)"; 
+      st_create_context_priv -> {cso_create_context, _vbo_CreateContext, _mesa_initialize_dispatch_tables, _mesa_initialize_vbo_vtxfmt, st_init_driver_flags, "list_inithead(&st->winsys_buffers)"};
+      _vbo_CreateContext -> {init_generic_currval, vbo_exec_init, vbo_save_init, _mesa_new_vao, _mesa_vertex_attrib_binding};
+      vbo_exec_init -> vbo_exec_vtx_init -> {"vbo_exec_context->vtx.bufferobj=gl_context->Driver.NewBufferObject"};
+      _mesa_new_vao -> _mesa_initialize_vao;
+      _mesa_initialize_dispatch_tables -> {_mesa_initialize_exec_table, _mesa_initialize_save_table};
+      _mesa_initialize_exec_table -> {"SET_BindTexture(gl_context->Exec:_glapi_table, _mesa_BindTexture)", "SET_xxx...."};
+      "SET_BindTexture(gl_context->Exec:_glapi_table, _mesa_BindTexture)" -> "SET_by_offset(disp, _gloffset_BindTexture, void (GLAPIENTRYP fn)(GLenum, GLuint))" -> "((_glapi_proc*) (gl_context->Exec))[offset] = (_glapi_proc) fn;";
+      _mesa_initialize_vbo_vtxfmt -> _vbo_install_exec_vtxfmt -> _mesa_install_exec_vtxfmt -> {"SET_Color4f(tab, vfmt->Color4f)", "SET_xxx....."};
+  }
+
+#+END_SRC
+
+#+RESULTS:
+[[file:./mesa-egl/mesa-eglCreateContext.png]]
