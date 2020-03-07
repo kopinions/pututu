@@ -42,6 +42,9 @@ mkdir -p ./mesa-egl
   +------------------+	
 #+END_SRC
 
+#+RESULTS:
+[[file:./mesa-egl/mesa-stack.png]]
+
 *** EGL 根据编译和环境变量加载指定的驱动
   #+BEGIN_SRC dot :file ./mesa-egl/find_dri.png :exports results
     digraph G {
