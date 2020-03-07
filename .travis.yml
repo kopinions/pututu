@@ -10,6 +10,10 @@ branches:
   only:
     - master
 
+cache:
+  directories:
+    - .cache
+    
 before_install:
   - .travis/setup
   - openssl enc -aes-256-cbc -nosalt -d -K $ENCRYPT_KEY -iv $ENCRYPT_IV -in .travis/rsa.enc -out ~/.ssh/rsa
