@@ -1,0 +1,627 @@
+#+TITLE:  Mesa meson 构建系统初探
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
+#+DATE: <2020-02-12 12:40:20>
+#+LAYOUT: post
+#+EXCERPT: meson 是一个新的构建工具。meson 提供一套新的 DSL 用来描述我们的项目结构，从而能达到简化我们构建脚本的目的。
+#+DESCRIPTION: meson 是一个新的构建工具。meson 提供一套新的 DSL 用来描述我们的项目结构，从而能达到简化我们构建脚本的目的。
+#+TAGS: OpenGL, mesa, Graphics
+#+CATEGORIES: Graphics,OpenGL
+
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+LATEX_HEADER: \usepackage{xeCJK}
+#+LATEX_HEADER: \setCJKmainfont{Heiti SC}
+
+**** meson 是什么？
+ meson 是一个新的构建工具。meson 提供一套新的 DSL 用来描述我们的项目结构，从而能达到简化我们构建脚本的目的。
+
+ meson 强制使用代码外构建策略（不在代码目录中写入任何内容），所有的构建过程都在单独的目录。从 meson 的命令也可以看出
+ src_sh[:exports code :eval never]{meson [command] [arguments] [options]} , 其中有些 setup 相关的命令必须指定一个目录才可以。
+**** meson 使用
+meson 构建系统使用项目根目录的 meson.build 文件作为项目构建的描述文件。类似于项目根目录的 CMakeLists.txt
+
+***** 简单的 meson 示例
+#+BEGIN_SRC c :exports code :eval never
+project('simple', 'c')
+src = ['source1.c', 'source2.c', 'source3.c']
+exe = executable('myexe', src)
+test('simple test', exe)
+#+END_SRC
+***** 配置构建目录
+#+BEGIN_SRC shell :exports code :eval never
+cd /path/to/source/root/
+# 通过 setup 命令创建 builddir, meson 通过加载 meson.build 配置文件，按照对应的后端（ninja,make）生成对应的构建脚本，并将其写入 builddir
+meson setup builddir --backend=ninja
+#+END_SRC
+
+在上面的命令中，builddir 是必须的选项。因为这样可以极大的简化构建的过程。我们可以通过指定不同的选项，和不同的构建目录，从而来完成不同的构建。
+比如我们可以使用 src_sh[:exports code :eval never]{CC=clang CXX=clang++ meson setup buildclang} 来完成 clang 环境下的构建。
+
+***** 环境变量
+在使用 meson 构建系统的时候，我们可以通过环境变量来控制 meson 不同的行为。比如如下的一些
+
+| Name     | Comment                    |
+|----------+----------------------------|
+| CFLAGS   | Flags for the C compiler   |
+| CXXFLAGS | Flags for the C++ compiler |
+	
+***** 构建
+ #+BEGIN_SRC shell :exports code :eval never
+ ninja -C builddir
+ #+END_SRC
+***** 测试
+#+BEGIN_SRC shell :exports code :eval never
+ninja -C builddir test
+#+END_SRC
+***** 安装
+#+BEGIN_SRC shell :exports code :eval never
+ninja -C builddir install
+#+END_SRC
+
+默认的 meson 会安装到 /usr/local 目录， 我们可以在 setup 的时候，使用 --prefix /my/prefix 来修改安装目录。meson 同时还支持 DESTDIR 环境变量来修改安装目录。示例如下
+#+BEGIN_SRC shell :exports code :eval never
+DESTDIR=/path/to/staging ninja -C builddir install
+#+END_SRC
+
+**** 构建选项
+meson 支持两种形式的构建选项。一种是通过配置文件(meson_options.txt)指定的构建中的各种配置，同时 meson 还有很多内置的构建选项，包括：全局配置，基础配置，编译配置等等。
+***** 配置文件
+很多软件在发布的时候，一般都会有很多选项供用户进行选择。meson 提供一种选项配置文件的机制，来进行选项的配置。选项配置文件名为 meson_options.txt,
+在项目根目录下。简单的 options 如下所示
+
+#+BEGIN_SRC conf :exports code :eval never
+option('someoption', type : 'string', value : 'optval', description : 'An option')
+option('other_one', type : 'boolean', value : false)
+option('combo_opt', type : 'combo', choices : ['one', 'two', 'three'], value : 'three')
+option('integer_opt', type : 'integer', min : 0, max : 5, value : 3) # Since 0.45.0
+option('free_array_opt', type : 'array', value : ['one', 'two'])  # Since 0.44.0
+option('array_opt', type : 'array', choices : ['one', 'two', 'three'], value : ['one', 'two'])
+option('some_feature', type : 'feature', value : 'enabled')  # Since 0.47.0
+#+END_SRC
+
+在上面的例子中，通过 type 来指定配置选项的类型，并且通过 value 来配置选项值。其中 type 为 combo 的值可以是 choices 中的值，如果是空，则默认选中第一个 choices.
+
+在 meson 的构建脚本中我们可以使用 get_option(opt_name) 来获取相应的选项的值。
+
+在 meson 的构建目录下运行 src_sh[:exports code :eval never]{meson configure} 就会显示出当前构建目录所有的配置选项，以及对应的值。
+
+我们也可以通过如下的几种形式来修改对应选项的值
+#+BEGIN_SRC shell :exports code :eval never
+meson configure -Dopt=value
+meson configure -Darray_opt=a,b
+meson configure -Dsubproject:option=value
+#+END_SRC
+
+在 meson 中有很多 default 的选项，可以通过 src_sh[:exports code :eval never]{meson configure} 来获取这些选项
+
+***** 内置选项
+在 meson 中内置了很多的选项，大致可以分为全局配置，基础配置，编译配置。这些内置的配置，可以通过 meson 的命令行指定或修改，也可以通过 meson_options.txt 进行配置
+
+****** 全局配置
+******* 目录配置
+
+| Option         | Default value | Description                             |
+|----------------+---------------+-----------------------------------------|
+| prefix         | see below     | Installation prefix                     |
+| bindir         | bin           | Executable directory                    |
+| datadir        | share         | Data file directory                     |
+| includedir     | include       | Header file directory                   |
+| infodir        | share/info    | Info page directory                     |
+| libdir         | see below     | Library directory                       |
+| libexecdir     | libexec       | Library executable directory            |
+| localedir      | share/locale  | Locale data directory                   |
+| localstatedir  | var           | Localstate data directory               |
+| mandir         | share/man     | Manual page directory                   |
+| sbindir        | sbin          | System executable directory             |
+| sharedstatedir | com           | Architecture-independent data directory |
+| sysconfdir     | etc           | Sysconf data directory                  |
+
+******* 核心配置
+
+| Option                                                             | Default value | Description                                                    | Is per machine |
+|--------------------------------------------------------------------+---------------+----------------------------------------------------------------+----------------|
+| auto_features {enabled, disabled, auto}                            | auto          | Override value of all 'auto' features                          | no             |
+| backend {ninja, vs, vs2010, vs2015, vs2017, vs2019, xcode}         | ninja         | Backend to use                                                 | no             |
+| buildtype {plain, debug, debugoptimized, release, minsize, custom} | debug         | Build type to use                                              | no             |
+| debug                                                              | true          | Debug                                                          | no             |
+| default_library {shared, static, both}                             | shared        | Default library type                                           | no             |
+| errorlogs                                                          | true          | Whether to print the logs from failing tests.                  | no             |
+| install_umask {preserve, 0000-0777}                                | 022           | Default umask to apply on permissions of installed files       | no             |
+| layout {mirror,flat}                                               | mirror        | Build directory layout                                         | no             |
+| optimization {0, g, 1, 2, 3, s}                                    | 0             | Optimization level                                             | no             |
+| pkg_config_path {OS separated path}                                | ''            | Additional paths for pkg-config to search before builtin paths | yes            |
+| cmake_prefix_path                                                  | []            | Additional prefixes for cmake to search before builtin paths   | yes            |
+| stdsplit                                                           | true          | Split stdout and stderr in test logs                           | no             |
+| strip                                                              | false         | Strip targets on install                                       | no             |
+| unity {on, off, subprojects}                                       | off           | Unity build                                                    | no             |
+| warning_level {0, 1, 2, 3}                                         | 1             | Set the warning level. From 0 = none to 3 = highest            | no             |
+| werror                                                             | false         | Treat warnings as errors                                       | no             |
+| wrap_mode {default, nofallback, nodownload, forcefallback}         | default       | Wrap mode to use                                               | no             |
+
+****** 基础配置
+基础配置和其他配置的设置方式一样，但是只能通过在 builddir 下 meson configure 来查看相应的配置。
+
+| Option      | Default value  | Possible values                        | Description                                           |
+|-------------+----------------+----------------------------------------+-------------------------------------------------------|
+| b_asneeded  | true           | true, false                            | Use -Wl,--as-needed when linking                      |
+| b_bitcode   | false          | true, false                            | Embed Apple bitcode, see below                        |
+| b_colorout  | always         | auto, always, never                    | Use colored output                                    |
+| b_coverage  | false          | true, false                            | Enable coverage tracking                              |
+| b_lundef    | true           | true, false                            | Don't allow undefined symbols when linking            |
+| b_lto       | false          | true, false                            | Use link time optimization                            |
+| b_ndebug    | false          | true, false, if-release                | Disable asserts                                       |
+| b_pch       | true           | true, false                            | Use precompiled headers                               |
+| b_pgo       | off            | off, generate, use                     | Use profile guided optimization                       |
+| b_sanitize  | none           | see below                              | Code sanitizer to use                                 |
+| b_staticpic | true           | true, false                            | Build static libraries as position independent        |
+| b_pie       | false          | true, false                            | Build position-independent executables (since 0.49.0) |
+| b_vscrt     | from_buildtype | none, md, mdd, mt, mtd, from_buildtype | VS runtime library to use (since 0.48.0)              |
+
+****** 编译配置
+
+| Option        | Default value | Possible values                                                                                                         | Description                                          |
+|---------------+---------------+-------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------|
+| c_args        |               | free-form comma-separated list                                                                                          | C compile arguments to use                           |
+| c_link_args   |               | free-form comma-separated list                                                                                          | C link arguments to use                              |
+| c_std         | none          | none, c89, c99, c11, c17, c18, gnu89, gnu99, gnu11, gnu17, gnu18                                                        | C language standard to use                           |
+| c_winlibs     | see below     | free-form comma-separated list                                                                                          | Standard Windows libs to link against                |
+| cpp_args      |               | free-form comma-separated list                                                                                          | C++ compile arguments to use                         |
+| cpp_link_args |               | free-form comma-separated list                                                                                          | C++ link arguments to use                            |
+| cpp_std       | none          | none, c++98, c++03, c++11, c++14, c++17, c++1z, gnu++03, gnu++11, gnu++14, gnu++17, gnu++1z, vc++14, vc++17, vc++latest | C++ language standard to use                         |
+| cpp_debugstl  | false         | true, false                                                                                                             | C++ STL debug mode                                   |
+| cpp_eh        | default       | none, default, a, s, sc                                                                                                 | C++ exception handling type                          |
+| cpp_rtti      | true          | true, false                                                                                                             | Whether to enable RTTI (runtime type identification) |
+| cpp_winlibs   | see below     | free-form comma-separated list                                                                                          | Standard Windows libs to link against                |
+| fortran_std   | none          | [none, legacy, f95, f2003, f2008, f2018]                                                                                | Fortran language standard to use                     |
+
+**** 跨平台编译
+一个典型的跨平台编译的场景是：cross compile a cross compiler. (跨平台编译一个跨平台编译器). 在一个 Linux 主机上，生成一个在 Windows 上运行的编译器，这个编译器编译的结果，能够在 MIPS 机器上运行。
+在这里有三个概念：build machine, host machine, target machine. 在这里例子中 build machine 是 linux 主机， host machine 是 windows 主机， target machine 是 mips 机器。
+
+因为在整个跨平台编译的过程中需要用到很多工具链，每个工具链的配置可能都不一样，meson 提供一个比较简单的方式来控制这种跨平台编译： cross build definition file. 一个交叉编译描述文件分为多个部分，示例如下
+#+BEGIN_SRC conf :exports code :eval never
+[binaries]
+c = '/usr/bin/i586-mingw32msvc-gcc'
+cpp = '/usr/bin/i586-mingw32msvc-g++'
+ld = 'gold'
+ar = '/usr/i586-mingw32msvc/bin/ar'
+strip = '/usr/i586-mingw32msvc/bin/strip'
+pkgconfig = '/usr/bin/i586-mingw32msvc-pkg-config'
+exe_wrapper = 'wine' # A command used to run generated executables.
+[properties]
+sizeof_int = 4
+sizeof_wchar_t = 4
+sizeof_void* = 4
+
+alignment_char = 1
+alignment_void* = 4
+alignment_double = 4
+
+has_function_printf = true
+[host_machine]
+system = 'windows'
+cpu_family = 'x86'
+cpu = 'i686'
+endian = 'little'
+
+[paths]
+prefix = '/my/prefix'
+libdir = 'lib/i386-linux-gnu'
+bindir = 'bin'
+#+END_SRC
+
+
+可以使用如下的命令启动交叉编译
+#+BEGIN_SRC shell :exports code :eval never
+meson srcdir builddir --cross-file cross_file.txt
+#+END_SRC
+**** 常用的指令
+***** include 目录
+#+BEGIN_SRC conf :exports code :eval never
+# 定义
+include_object include_directories(directory_names, ...)
+# 示例
+incdir = include_directories('include');
+#+END_SRC
+***** 构建目标
+我们可以使用通用的目标定义方式，定义和示例如下所示
+#+BEGIN_SRC meson :exports code :eval never
+  # target_type 的取值可以为
+  # 1. executable
+  # 2. shared_library
+  # 3. shared_module
+  # 4. static_library
+  # 5. both_libraries
+  # 6. library
+  # 7. jar
+  build_target build_target(<arguments and keyword arguments>, target_type : 'executable')
+
+  # 同时有一些更为方便的 API 用来定义构建目标
+  buildtarget executable(*exe_name*, *sources*, ...)
+  buildtarget shared_library(library_name, list_of_sources, ...)
+  buildtarget static_library(library_name, list_of_sources, ...)
+#+END_SRC
+
+上面的定义方式，支持一些配置参数，对目标进行配置，常见的配置选项入下表所示
+
+| 选项                | 类型                           | 默认取值 | 说明                                                                       |
+|---------------------+--------------------------------+----------+----------------------------------------------------------------------------|
+| <language>_args     | array                          | []       | 对于某种语言的编译器选项配置，如果是 c, 则该选项为 c_args                  |
+| build_by_default    | boolean                        | true     | 当 ninja 命令没有参数运行的时候，该目标默认构建                            |
+| dependencies        | dependency_object              | null     | 当前构建目标的前置依赖，如果依赖需要编译，则先编译依赖                     |
+| link_args           | array                          | []       | link 的时候，使用的参数                                                    |
+| link_depends        | strings, files, custom_targets |          | 当依赖的link 目标被重新构建之后，需要触发当前目标的重新链接（relink）      |
+| link_with           | array                          | []       | 当前目标需要和其他的目标进行链接（link）                                   |
+| include_directories | array                          | []       | 会被透明的中设置到 include 的目录配置中                                    |
+| install             | boolean                        | false    | 当前构建目标是否会被安装到系统中                                           |
+| install_dir         | string                         |          | 覆盖当前目标的安装目录，这个选项是一个相对目录，根目录为 prefix 指定的目录 |
+
+***** 自定义命令
+***** 自定义目标
+#+BEGIN_SRC meson :exports code :eval never
+  customtarget custom_target(*name*, ...)
+#+END_SRC
+
+自定义主要有如下一些配置选项进行配置
+| 选项               | 类型                               | 默认取值 | 说明                                                                                        |
+|--------------------+------------------------------------+----------+---------------------------------------------------------------------------------------------|
+| build_by_default   | boolean                            | false    | 当 ninja 命令没有参数运行的时候，该目标默认构建                                             |
+| build_always_stale | boolean                            | -        | 当前目标一直会被认为是过期的，每次都会重新构建                                              |
+|--------------------+------------------------------------+----------+---------------------------------------------------------------------------------------------|
+| capture            | boolean                            | -        | 对于一些命令，没法直接处理参数中给出的文件，他们都是将数据输出到标准输出，这种情况 meson    |
+|                    |                                    |          | 获取 stdout, 并将其写入到目标文件                                                           |
+|--------------------+------------------------------------+----------+---------------------------------------------------------------------------------------------|
+| command            | array                              |          | 如何将 input 编程处理成 output, command 的形式为 ['commandname', '-arg1' '-arg2'], 其中     |
+|                    |                                    |          | commandname 可以是 find_program(), executable(), configrue_file(), files(), custom_target() |
+|--------------------+------------------------------------+----------+---------------------------------------------------------------------------------------------|
+| depend_files       | string, files(), confingure_file() |          | 依赖的文件，但是不会出现在 command 参数中                                                   |
+| depends            |                                    |          | 依赖的其他目标，需要优先构建                                                                |
+| input              | array                              |          | 源文件列表                                                                                  |
+| install            | boolean                            | -        | 是否安装                                                                                    |
+| install_dir        | string                             |          |                                                                                             |
+| output             | array                              |          | 输出文件列表                                                                                |
+
+在 command 中如果需要使用配置选项中的一些值的时候，meson 支持一些特殊的变量，从而对 command 进行替换。
+| 变量名               | 说明                                                                                                                                  |
+|----------------------+---------------------------------------------------------------------------------------------------------------------------------------|
+| @INPUT@              | input 变量的完整路径， 如果有多个 input 文件， 每个文件会被处理为单独的参数传递给 command(只有 '@INPUT@' 生效 '.*@INPUT@.*' 都不生效) |
+| @OUTPUT@             | output 变量的全路径，约束同 @INPUT@                                                                                                   |
+| @INPUT0@, @INPUT1@   | input 数组中的某一项                                                                                                                  |
+| @OUTPUT0@, @OUTPUT1@ | output 数组中的某一项                                                                                                                 |
+| @OUTDIR@             | output 目录                                                                                                                           |
+| @DEPFILE@            | 依赖文件                                                                                                                              |
+| @PLAINNAME@          | 只有文件名，没有目录信息                                                                                                              |
+| @BASENAME@           | 只有文件名，没有扩展名信息                                                                                                            |
+***** 安装
+安装有如下的几种形式
+#+BEGIN_SRC meson :exports code :eval never
+  executable('prog', 'prog.c', install : true, install_dir : 'my/special/dir')
+  install_headers('header.h', subdir : 'projname') # -> include/projname/header.h
+  install_man('foo.1') # -> share/man/man1/foo.1
+  install_data('datafile.dat', install_dir : get_option('datadir') / 'progname')
+  install_subdir('mydir', install_dir : 'include') 
+
+  custom_target(...
+      output: ['file1', 'file2', 'file3'],
+      install_dir: ['path1', false, 'path3'],
+      ...
+  )
+#+END_SRC
+**** meson 实例（mesa）
+     :LOGBOOK:
+     CLOCK: [2020-02-11 Tue 21:54]--[2020-02-11 Tue 22:40] =>  0:46
+     :END:
+1. 根目录 meson.build 主要用来，检查依赖（dep_xxx）, 配置各种选项（c_args, cpp_args），以及模块是否编译（with_glx, with_xxx），包含子目录 meson.build
+  #+BEGIN_SRC python :exports code :eval never
+  subdir(include)
+  subdir(bin)
+  subdir(src)
+  #+END_SRC
+2. include/meson.build
+   根据 with_gles1, with_gles2, with_opengl, with_egl, with_osmesa, with_platform_haiku, with_gallium_opencl, with_intel_vk 等变量决定安装什么头文件到系统
+   #+BEGIN_SRC conf :exports code :eval never
+   if with_gles1
+     install_headers(
+       'GLES/egl.h',
+       'GLES/gl.h',
+       'GLES/glext.h',
+       'GLES/glplatform.h',
+       subdir: 'GLES'
+     )
+   endif
+   #+END_SRC
+3. bin/meson.build
+   将构建中会用到的一些工具，引入到 meson 的构建工具中，在其他 meson.build 中可以直接使用
+   #+BEGIN_SRC conf :exports code :eval never
+   git_sha1_gen_py=files('git_sha1_gen.py')
+   symbols_check=find_program('symbols-check.py')
+   #+END_SRC
+4. src/meson.build
+   1. 为了加速构建，使用 git 的提交号，作为是否构建的一个来源， 通过生成 src/git_sha1.h 来处理 git 提交 hash.
+      #+BEGIN_SRC conf :exports code :eval never
+      sha1_h = custom_target(
+	'git_sha1.h',
+	output : 'git_sha1.h',
+	command : [prog_python, git_sha1_gen_py, '--output', '@OUTPUT@'],
+	build_always : true, # commit sha1 can change without having touched these files
+      )
+      #+END_SRC
+   2. 包含一些必须的模块
+      #+BEGIN_SRC conf :exports code :eval never
+      subdir('gtest')
+      subdir('util')
+      subdir('mapi')
+      subdir('compiler')
+      subdir('mesa')
+      subdir('loader')
+      #+END_SRC
+
+      1. mapi/meson.build
+	 1. 加载代码代码生成可执行 python 文件，以便与glapi, shared_api, es1api, es2api 使用
+	    #+BEGIN_SRC meson :exports code :eval never
+	    genCommon_py = files('new/genCommon.py')
+	    gelapi_gen_mapi_py = files('new/gen_gldispatch_mapi.py')
+	    mapi_abi_py = files('mapi_abi.py')
+	    #+END_SRC
+
+	 2. 加载子目录
+	    #+BEGIN_SRC meson :exports code :eval never
+	    subdir('glapi')
+	    subdir('shared-glapi')
+	    if with_gles1
+	      subdir('es1api')
+	    endif
+	    if with_gles2
+	      subdir('es2api')
+	    endif
+	    #+END_SRC
+	    1. glapi/meson.build
+	      其中 glapi 中放置了 gen 文件夹 ~subdir('gen')~，其中 gen 中包含 api 规范的xml 描述文件。并且包含很多根据 xml 生成 c 代码的 python 脚本。
+	      1
+	      由于 mesa 支持静态编译和动态编译，静态编译和动态编译使用不同的入口。
+	      #+BEGIN_SRC meson :exports code :eval never
+		subdir('gen')
+		if with_shared_glapi
+		  static_glapi_files += files(
+		    '../entry.c',
+		    '../entry.h',
+		    '../entry_x86-64_tls.h',
+		    '../entry_x86_tls.h',
+		    '../entry_x86_tsd.h',
+		    '../entry_ppc64le_tls.h',
+		    '../entry_ppc64le_tsd.h',
+		    '../mapi_tmp.h',
+		  )
+		  static_glapi_files += glapi_mapi_tmp_h
+		  static_glapi_args += [
+		    '-DMAPI_MODE_BRIDGE',
+		    '-DMAPI_ABI_HEADER="@0@"'.format(glapi_mapi_tmp_h.full_path()),
+		    gcc_lto_quirk,
+		  ]
+		else
+		  static_glapi_args += '-DMAPI_MODE_UTIL'
+		  static_glapi_files += files(
+		    'glapi_dispatch.c',
+		    'glapi_entrypoint.c',
+		    'glapi_getproc.c',
+		    'glapi_nop.c',
+		    'glapi.c',
+		    'glapi.h',
+		    'glapi_priv.h',
+		  )
+		  static_glapi_files += files_mapi_util
+		  static_glapi_files += [
+		    glapitable_h, glapi_mapi_tmp_h, glprocs_h, glapitemp_h,
+		  ]
+		  if with_asm_arch == 'x86'
+		    static_glapi_files += glapi_x86_s
+		  elif with_asm_arch == 'x86_64'
+		    static_glapi_files += glapi_x86_64_s
+		  elif with_asm_arch == 'sparc'
+		    static_glapi_files += glapi_sparc_s
+		  endif
+		endif
+		libglapi_static = static_library(
+		  'glapi_static',
+		  static_glapi_files,
+		  include_directories : [inc_mesa, inc_include, inc_src, inc_mapi],
+		  c_args : [c_msvc_compat_args, static_glapi_args],
+		  dependencies : [dep_thread, dep_selinux],
+		  build_by_default : false,
+		)
+	      #+END_SRC
+	    2. shared-glapi/meson.build
+	       #+BEGIN_SRC meson :exports code :eval never
+		 files_mapi_glapi = files(
+		   '../entry.c',
+		   '../mapi_glapi.c',
+		   '../stub.c',
+		   '../stub.h',
+		   '../table.c',
+		   '../table.h',
+		 )
+
+		 # 生成 glapi_mapi_tmp.h, 使用 Application Binary Interface 生成对应的低层次调用接口。
+		 # 这个调用接口包含，
+		 # 1. 数据类型大小， 布局，对齐
+		 # 2. 调用约定
+		 # 3. 系统调用编码
+		 # 4. 目标文件，二进制格式，程序库等
+		 shared_glapi_mapi_tmp_h = custom_target(
+		   'shared_glapi_mapi_tmp.h',
+		   input : [mapi_abi_py, gl_and_es_api_files],
+		   output : 'glapi_mapi_tmp.h',
+		   command : [prog_python, '@INPUT0@', '--printer', 'shared-glapi', '@INPUT1@'],
+		   depend_files : api_xml_files,
+		   capture : true,
+		 )
+		 # 生成 libglapi.so, 并且将刚才生成的 abi 的头文件引入到 glapi.so 中；
+		 libglapi = shared_library(
+		   'glapi',
+		   [files_mapi_glapi, files_mapi_util, shared_glapi_mapi_tmp_h],
+		   c_args : [
+		     c_msvc_compat_args, c_vis_args, '-DMAPI_MODE_GLAPI',
+		     '-DMAPI_ABI_HEADER="@0@"'.format(shared_glapi_mapi_tmp_h.full_path()),
+		     gcc_lto_quirk,
+		   ],
+		   link_args : [ld_args_gc_sections],
+		   include_directories : [inc_src, inc_include, inc_mapi],
+		   dependencies : [dep_thread, dep_selinux],
+		   version : '0.0.0',
+		   install : true,
+		 )
+	       #+END_SRC
+	    3. es1api/meson.build
+	       #+BEGIN_SRC meson :exports code :eval never
+		 # 生成 es1 的 ABI 接口描述头文件
+		 es1_glapi_mapi_tmp_h = custom_target(
+		   'es1_glapi_mapi_tmp.h',
+		   input : [glapi_gen_mapi_py, glapi_gen_gl_xml],
+		   output : 'glapi_mapi_tmp.h',
+		   command : [prog_python, '@INPUT0@', 'glesv1', '@INPUT1@'],
+		   depend_files : glapi_gen_mapi_deps,
+		   capture : true,
+		 )
+
+		 # 生成 libglesv1_cm.so 动态库
+		 libglesv1_cm = shared_library(
+		   'GLESv1_CM' + get_option('gles-lib-suffix'),
+		   ['../entry.c', es1_glapi_mapi_tmp_h],
+		   c_args : [
+		     c_msvc_compat_args, c_vis_args, '-DMAPI_MODE_BRIDGE',
+		     '-DMAPI_ABI_HEADER="@0@"'.format(es1_glapi_mapi_tmp_h.full_path()),
+		     gcc_lto_quirk,
+		   ],
+		   link_args : [ld_args_gc_sections],
+		   include_directories : [inc_src, inc_include, inc_mapi],
+		   link_with : libglapi,
+		   dependencies : [dep_thread, dep_libdrm, dep_m, dep_dl],
+		   version : '1.1.0',
+		   install : true,
+		 )
+
+	       #+END_SRC
+      2. compiler/meson.build
+	 编译器相关的 meson 配置
+	 #+BEGIN_SRC meson :exports code :eval never
+	 # 准备头文件
+	 inc_compiler = include_directories('.')
+	 inc_glsl = include_directories('glsl')
+	 inc_spirv = include_directories('spirv')
+
+	 subdir('spirv')
+	 subdir('nir')
+	 subdir('glsl')
+
+	 #+END_SRC
+      3. mesa/meson.build
+	 1. 加载 src/mesa/program/meson.build(subdir('program'))
+	    先使用 flex, 生成 glsl 的词法分析代码，生成的代码被放在 lex.yy.c, 然后使用 bison 生成语法分析代码，放在 program_parse.tab.ch
+	    #+BEGIN_SRC meson :exports code :eval never
+	    mesa_lex = custom_target(
+	      'mesa_lex',
+	      input : 'program_lexer.l',
+	      output : 'lex.yy.c',
+	      command : [prog_flex, '-o', '@OUTPUT@', '@INPUT@'],
+	    )
+
+	    program_parse_tab = custom_target(
+	      'program_parse_tab.[ch]',
+	      input : 'program_parse.y',
+	      output : ['program_parse.tab.c', 'program_parse.tab.h'],
+	      command : [prog_bison, '-o', '@OUTPUT0@', '--defines=@OUTPUT1@', '@INPUT@'],
+	    )
+	    #+END_SRC
+	    具体示意图如下，红色部分为生成了词法分析器，和语法分析器之后的，对 GLSL 进行处理的路线。具体可以参考 [[https://longfangsong.github.io/2019/05/22/flex-bison%25E5%2585%25A5%25E9%2597%25A8/][flex bison 入门]]
+
+	 2. 加载 src/meson/main/meson.build(subdir('main'))
+	    根据 gl_and_es_api_files 来生成相应的头文件。 gl_and_es_api_files 的取值为 gl_and_es_API.xml. 
+	    这些自定义的目标依赖与 glapi_gen_depends, glapi_gen_depends, 的取值为 xml 相关 python 文件，以及 glapi spec 的 xml 描述文件。xml 样例如下所示
+	    #+BEGIN_SRC xml :exports code :eval never
+	    <category name="es1.0">
+	      <!-- from GL_OES_fixed_point -->
+	      <enum name="FIXED"                                    value="0x140C"/>
+
+	      <type name="fixed"   size="4"/>
+	      <type name="clampx"  size="4"/>
+	      <function name="Color4x" es1="1.0" desktop="false">
+		<param name="red" type="GLfixed"/>
+		<param name="green" type="GLfixed"/>
+		<param name="blue" type="GLfixed"/>
+		<param name="alpha" type="GLfixed"/>
+	      </function>
+	    </category>
+	    #+END_SRC
+	    #+BEGIN_SRC meson :exports code :eval never
+	    main_dispatch_h = custom_target(
+	      'dispatch.h',
+	      input : [files('../../mapi/glapi/gen/gl_table.py'), gl_and_es_api_files],
+	      output : 'dispatch.h',
+	      command : [prog_python, '@INPUT0@', '-f', '@INPUT1@', '-m', 'remap_table'],
+	      depend_files : glapi_gen_depends,
+	      capture : true,
+	    )
+
+	    main_marshal_generated_h = custom_target(
+	      'marshal_generated.h',
+	      input : [files('../../mapi/glapi/gen/gl_marshal_h.py'), gl_and_es_api_files],
+	      output : 'marshal_generated.h',
+	      command : [prog_python, '@INPUT0@', '-f', '@INPUT1@'],
+	      depend_files : files('../../mapi/glapi/gen/marshal_XML.py') + glapi_gen_depends,
+	      capture : true,
+	    )
+
+	    main_remap_helper_h = custom_target(
+	      'remap_helper.h',
+	      input : [files('../../mapi/glapi/gen/remap_helper.py'), gl_and_es_api_files],
+	      output : 'remap_helper.h',
+	      command : [prog_python, '@INPUT0@', '-f', '@INPUT1@'],
+	      depend_files : glapi_gen_depends,
+	      capture : true,
+	    )
+
+	    #+END_SRC
+	 3. 生成 meson_gallium 静态库，将相应的代码文件汇集到 files_libmesa_comon, files_libmesa_classic, files_libmesa_gallium 几个变量中
+	 4. 加载驱动模块
+	    #+BEGIN_SRC meson :exports code :eval never
+	    subdir('drivers/dri')
+	    if with_os_mesa == 'classic'
+	      subdir('drivers/osmessa')
+	    endif
+	    #+END_SRC
+      4. loader/meson.build
+   3. 根据 with_xxx 来决定是否引入其他的一些模块， 示例如下
+      #+BEGIN_SRC conf :exports code :eval never
+      if (with_gbm)
+	 subdir('gbm')
+      endif
+
+      if with_egl
+	 subdir('egl')
+      endif
+
+      if with_gallium
+	 subdir('gallium')
+      endif
+      #+END_SRC
+      并且通过 pkgconfig 模块，来生成 *.pc 文件， 来指导第三方应用程序去构建
+      #+BEGIN_SRC conf :exports code :eval never
+      if with_glx != 'disabled' and not with_glvnd
+	pkg.generate(
+	  name : 'gl',
+	  description : 'Mesa OpenGL Library',
+	  version : meson.project_version(),
+	  libraries : libgl,
+	  libraries_private : gl_priv_libs,
+	  requires_private : gl_priv_reqs,
+	  variables : ['glx_tls=yes'],
+	)
+      endif
+      #+END_SRC
+
+      1. src/gallium/meson.build
+

@@ -1,12 +1,12 @@
-#+TITLE:  Mesa meson 构建系统初探
+#+TITLE:  Mesa3D 详解
 #+AUTHOR: 孙建康（rising.lambda）
 #+EMAIL:  rising.lambda@gmail.com
 #+DATE: <2020-02-15 12:40:20>
 #+LAYOUT: post
 #+EXCERPT:  meson 是一个新的构建工具。meson 提供一套新的 DSL 用来描述我们的项目结构，从而能达到简化我们构建脚本的目的。
 #+DESCRIPTION: meson 是一个新的构建工具。meson 提供一套新的 DSL 用来描述我们的项目结构，从而能达到简化我们构建脚本的目的。
-#+TAGS: OpenGL graphics mesa
-#+CATEGORIES: OpenGL mesa
+#+TAGS: mesa, opengl, vulkan, graphic, gpu
+#+CATEGORIES: graphics,mesa
 
 #+PROPERTY:    header-args        :comments org
 #+PROPERTY:    header-args        :mkdirp yes
@@ -19,31 +19,60 @@
 #+BEGIN_SRC shell :exports none :results none
 mkdir -p ./mesa-egl
 #+END_SRC
-** mesa egl 入门
-*** mesa stack
-#+BEGIN_SRC ditaa :file ./mesa-egl/mesa-stack.png :exports results
-  +------------------+
-  |                  |
-  |      APP         |   	
-  |                  |
-  +------------------+
-
-
-  +------------------+
-  |                  |
-  |       EGL        |
-  |                  |
-  +------------------+
-	
-  +------------------+
-  |                  |
-  |     EGL Driver   |   	
-  |                  |
-  +------------------+	
+** mesa 架构详解
+mesa 也称作 Mesa3D 是一个 OpenGL, Vulkan 等规范的一个开源实现。mesa 将这些规范翻译到针对不同硬件平台的实现。mesa 作为一个开源图形技术栈，在整个 linux 图形栈中，得位置如下图所示
+#+BEGIN_SRC ditaa :file ./mesa-egl/linux-graphic-stack.png :exports results
+  +-------------------------------------------------+
+  |                                                 |
+  |                       APP                       |
+  |                                                 |
+  +-------------------------------------------------+
+			   |                         
+			   v                         
+  +-------------------------------------------------+
+  |                       Mesa                      |
+  | +-------------------+    +-------------------+  |
+  | |                   |    |    State Tracker  |  |
+  | |                   |    +-------------------+  |
+  | |                   |              |            |
+  | |                   |              v            |
+  | |                   |    +-------------------+  |
+  | |      dri 1.0      |    |   GPU-specific    |  |
+  | |    style driver   |    |  Device Driver    |  |
+  | |                   |    +-------------------+  |
+  | |                   |              |            |
+  | |                   |              v            |
+  | |                   |    +-------------------+  |
+  | |                   |    |      OS Winsys    |  |
+  | +-------------------+    +-------------------+  |
+  +-------------------------------------------------+
+  |                     libdrm                      |
+  +-------------------------------------------------+
+			  |                          
+			  v                          
+  +-------------------------------------------------+
+  |                    kernel                       |
+  |                                                 |
+  |      +-------+                 +-------+        |
+  |      |  kms  |                 |  drm  |        |
+  |      +-------+                 +-------+        |
+  +-------------------------------------------------+
+			  |                          
+			  v                          
+  +-------------------------------------------------+
+  |                    device                       |
+  |                                                 |
+  |                                                 |
+  |    +------+  +-----------+ +----------+ +------+|
+  |    | Scree|  |  display  | |   video  | |  GPU ||
+  |    |      |  | controller| |    ram   | |      ||
+  |    +------+  +-----------+ +----------+ +------+|
+  +-------------------------------------------------+
 #+END_SRC
 
 #+RESULTS:
-[[file:./mesa-egl/mesa-stack.png]]
+[[file:./mesa-egl/linux-graphic-stack.png]]
+*** mesa 架构 
 
 *** EGL 根据编译和环境变量加载指定的驱动
   #+BEGIN_SRC dot :file ./mesa-egl/find_dri.png :exports results

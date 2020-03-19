@@ -1,0 +1,225 @@
+#+TITLE:  Emacs 奇淫巧计
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
+#+DATE: <2019-06-30 12:40:20>
+#+LAYOUT: post
+#+EXCERPT: emacs 各种常见的使用技巧  
+#+DESCRIPTION: emacs 各种常见的使用技巧
+#+TAGS: emacs, productivity
+#+CATEGORIES: productivity
+
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+LATEX_HEADER: \usepackage{xeCJK}
+#+LATEX_HEADER: \setCJKmainfont{Heiti SC}
+
+** emacs 快捷键
+*** ansi-term
+**** copy & paste
+     当处于 ansi-term 状态下时， 命令行是只读状态，所以需要使用特定的组合键来完成粘贴 C-c C-y, 或者使用C-x C-j 变成 line-mode, C-c C-k 退出 line mode当处于 ansi-term 状态下时， 命令行是只读状态，所以需要使用特定的组合键来完成粘贴 C-c C-y, 或者使用C-x C-j 变成 line-mode, C-c C-k 退出 line mode当处于 ansi-term 状态下时， 命令行是只读状态，所以需要使用特定的组合键来完成粘贴 C-c C-y, 或者使用C-x C-j 变成 line-mode, C-c C-k 退出 line mode
+*** mark-ring
+    当用 emacs 进行搜索或者跳转的时候，emacs 会将当前位置做标记，并且保存在 mark-ring 中， 如果想要跳转到原来的位置，可以使用 C-u C-SPC
+    如果需要跳转多次，可以使用 C-u C-SPC C-SPC C-SPC 等
+*** eshell
+**** history
+    可以使用 M-r 搜索 eshell 命令行历史，搜索完结果会直接在当前行显示。使用 M-n , M-p 进行上一个下一个的跳转
+*** navigation
+**** begin & end of function
+     对于大多数编程语言来讲，可以使用 C-M-a 来移动到函数头，使用 C-M-e 移动到函数尾
+**** begin & end of parenthetical group
+     C-M-n 向前移动到括号，C-M-p 向后移动到括号
+**** reposition point
+     很多时候我们仅仅是想将光标移动到上部，或者中部，或者下部，但是不进行文字滚动。此时我们可以使用 M-r 进行光标之间的切换。可以将 position
+     移动到 top, bottom, center
+*** basic
+**** file
+     - 插入
+       可以在当前文件插入其他文件内容，使用 C-x i 进行插入
+     - 在当前位置找文件
+       当光标当前位置，猜文件目录，并且找到文件 find-file-at-point, 缩写为 ffap
+***** tramp
+      使用 c-x c-f 可以打开文件，当输入的是远程 server 的地址的时候，emacs 可以直接打开远程 server.
+***** find file at point
+
+      当当前光标是一个文件的时候，我们可以通过 find-file-at-point 来打开文件
+**** link
+     C-c C-o 可以在指定的位置添加链接，也可以在，链接可以为文件。当为文件的时候，可以指定对应的标签，用来打开文件后跳转到指定的位置。
+**** point & mark & region
+ #+BEGIN_SRC markdown :eval never :exports code
+ ```
+ Lorem ipsum dolor sit amet
+       ^ Cursor
+
+
+       Point
+       |
+       Mark
+       |
+ Lorem ipsum dolor sit amet
+       ^ C-spc
+
+
+       Mark          Point
+       | ----region--|
+       |             |
+ Lorem ipsum dolor sit amet
+          move       ^
+          forward ->
+
+
+       Mark          Point
+       | ----region--|
+       |             |
+ Lorem ipsum dolor sit amet
+                     ^
+                     C-x C-x
+
+
+       Point         Mark
+       | ----region--|
+       |             |
+ Lorem ipsum dolor sit amet
+
+ Point and mark interchanged
+ ```
+ #+END_SRC
+**** move to upper expression start
+     当我们处于一个表达式内部，比如处于一个括号内部，我们如何用更快的方法跳转到括号所在的位置？可以使用 C-M-u 跳转到
+     upper 的 expression 的地方。 back up expression
+**** 移动整体代码块
+     选中代码块后，可以使用 C-x TAB 来进行对应的缩进操作。背后运行的命令为 indent rigidly. 也可以带参数向左移或者右移
+**** register
+     可以使用 C-x r SPC 来将当前 point 保存到 register, 然后可以使用 C-x r j 来进行 register 的跳转
+**** arguments
+***** negative argument
+      emacs arguments 一般都是正向操作，比如 M-c 将下一个单词的首字母大写。但是如果说我们刚输入完一个单词，
+      如何当前的 position 已经无法完成当前单词首字母大写，这种情况下可以使用 negative argument, 可以将
+      M-c 的生效方向转换成相反方向。
+**** ido-mode
+***** 停止自动补全
+
+      很多时候，当我们使用C-x C-f 去创建文件的时候，当存在相似文件名的时候，ido-mode 都会为我们选择类似的名字，从而导致不能正常的创建文件，此时可以使用 C-u C-j 来停止自动补全，并且当前输入的文件名作为文件名。不使用补全。
+**** edit
+***** upper case
+
+      可以使用 upcase-char 或者 upcase-word 命令来将当前光标后的内容转化成大写。upcase-word 命令一般被绑定到 M-u
+      可以使用 M-u 进行大写转换。可以使用 C-x M-u 对整个一段进行大小写转换
+***** symbol overlay
+
+      在编辑代码的时候，我们往往需要将某一个变量或者符号进行高亮显示，这种情况下，我们可以使用 symbol-overlay 插件
+      来进行 overlay 的高亮。purcell 的键位绑定是把 m-i 绑定到 symbol-overlay-put 来在当前为止添加 symbol-overlay 添加
+      可以使用 symbol-overlay-delete-all 来删除当前文件的所有 symbol-overlay, 这个被绑定到 M-I 上， 可以使用 symbol-overlay-jump-next,
+      和 symbol-overlay-jump-prev 进行 symbol 的跳转 通常这两个键位被绑定到 M-p M-n 键位上
+***** mutliple cursor
+      /workspace/6c/CopyQ/.gitlab-ci.yml
+      在编辑代码的时候，我们经常想要一同编辑一个符号，这种时候我们可以是用 multiple-cursor 插件进行相应的配置。
+      multiple-cursor 所有的 command 都在 mc/ 命名空间下，所以我们可以使用 mc/ 相关的指令进行操作。常用的一些操作被绑定
+      到比较方便的快捷键上。比如选中一个单词之后，依次往后选中相同的单词： mc/mark-next-like-this 被绑定到 c-+ 上
+      mc/mark-previous-like-this 被绑定到 c-< 上， mc/mark-all-like-this 被绑定到 c-c c-< 上。
+***** fold
+      可以使用 origami 来进行折叠相关的操作。在配置中可以将 C-c f 绑定到实际的 fold 方法上 或者可以使用 origami 开头的方法进行 fold 相关的配置
+*** window
+**** split window
+     window 相关的操作是一般都是以 split 来命名的。我们可以使用 split-window-horizonly 和 split-window-vertical
+进行 split. window 的操作一般分为： split window, 和切换布局。可以通过 C-x 2 , C-x 3 分别对当前窗口进行垂直和水平切分。也可以通过
+C-| 重新布局成垂直分隔， C-_ 重新分隔为水平布局。
+*** org-mode
+**** following mode
+     在 org-agenda 模式下，使用 F 开启 following mode. 在这个模式下，当选中一个 org-agenda 事项的时候，会在右侧同时出现该事项的文件内容
+     和上下文。使用 F 也可以关闭 following mode
+**** tangle
+     org mode 可以使用文学编程的方式来完成配置文件的编写。然后使用 org mode 的 tangle 可以将所有的代码抽取为独立的文件。可以使用
+     org babel tangle (C-c C-v t) 进行导出。
+**** sparse tree
+     在 org-mode 中可以使用 sparse tree 来进行搜索，以便与展开匹配项，合起来非匹配项。
+**** code template
+     可以使用 <s tab 的方式，来使用模板插入内容
+**** 切换 org-mode buffer
+     - 在当前文件是 org-mode buffer 的时候，可以使用 org-switchb 来进行 org-mode buffer 的切换
+**** org table
+***** 在单元格内完成换行
+      可以使用 M-RET 在单元格内完成换行的操作。
+*** ivy
+**** ivy search and edit
+     当使用 ivy M-? 进行搜索的时候，搜索的结果是单独的窗口中显示的。这种情况下可以使用 C-c C-o 在新窗口打开查找结果。但是新打开的查找结果是只读的。此时需要使用C-x C-q 进入 (ivy-wgrep-change-to-wgrep-mode),
+     这种情况下 buffer 会变成可编辑模式。结束编辑后，可以时候用C-c C-c (wgrep-finish-edit) 来完成编辑。
+*** org agenda
+**** filter by tag
+     可以使用 / 进行 tag 级别的搜索， 命中的 tag 的项目会展示出来， 使用 C-u / 则会隐藏匹配的项目。使用 / / 取消
+     tag filter
+**** filter by regexp
+     在 org-agenda 模式下，可以使用 = 来进行 regexp 的搜索，所有匹配正则表达式的 todo 都会显示出来。C-u = 将所有匹配的
+     的 todo 都隐藏起来。C-u C-u = 取消 regexp 匹配搜索。
+**** filter by categary
+     在 org-agenda 下可以使用 < 来进行按照当前选中 item 的 category 来搜索。C-u > 来隐藏同样 category 的 item.
+**** filter by parent headline
+     在 org-agenda 下使用 ^ 来现实当前 todo item 的 slibing item.
+**** scheduler
+
+***** timestamp
+      很多时候，我们需要使用 org-agenda 来记录重复的工作。比如一周给父母打一次电话。我们通常使用如下的方式来记录这个任务
+
+       ** 给父母打电话
+          SCHEDULED: <2019-07-28 SUN +1w>
+
+       这种情况下，如果你两周没有打电弧，就需要连续标记两次 DONE, 才能让当前事物处于正常状态下。遇到这种情况，我们可以使用 ++ 来处理
+
+       ** 给父母打电话
+          SCHEDULED: <2019-07-28 SUN ++1w>
+
+       如果当前时间是周五，但是已经两周没有给父母打电话，这种情况下，将当前事物标记为 DONE, org mode 会自动将日期移动到当前周的周末。
+
+       还有一种情况，比如说去健身房锻炼，往往我们需要一定的时间给肌肉休息，所以我们如果说我们好几天没有去了，我们下次去的时间应该从最近一次去的时间往后推指定的时间。这种情况下我们可以使用 .+ 的方式来指定任务的重复。
+
+       ** 去健身房
+          SCHEDULED: <2019-07-28 SUN .+2d>
+
+       比如当前时间是 7 月 29日。去健身房的任务已经过期。当我们标记当前任务为 DONE 的时候，org mode 会自动以当前时间重新计算后面需要去的时间，即 today + 2
+
+***** calendar 函数
+      很多时候，我们需要更加自定的方式来支持我们能够灵活的定义任务的重复，此时我们可以使用 diary S-exp 的形式来指定一个事务重复的时间
+
+      ** 去健身房
+          SCHEDULED: <%%(let ((dayname (calendar-day-of-week date))) (memq dayname '(1 3 5)))>
+
+      这个表达式的意思为: 当前天处于什么一周的第几天，如果是第一天（周一）， 第三天（周三）， 第五天（周五），这种情况下，当前事务就会出现在当前天的 org-agenda 中
+**** diary
+     经常会发现我们忘了一些重要的节日，这种情况下我们应该如何处理？可以使用 dairy 来记录纪念日，并在一定的时间展示他们
+
+     %%(diary-remind '(diary-anniversary 1 4 2018) 3) 结婚％d周年
+
+     上述表示的是，结婚是在 2018年4月1日。每个结婚纪念日，都会提前三天给出相应的提醒，告诉我们第多少个结婚纪念日
+**** auto save
+
+     使用了网盘同步工具之后，我们希望再我们标记完成某项事务的时候，我们的 buffer 能自动保存，这时候我们可以使用如下的配置文件来进行自动保存。
+
+     #+BEGIN_SRC elisp :exports code :eval never
+     (advice-add 'org-deadline       :after (lambda (&rest _rest)  (org-save-all-org-buffers)))
+     (advice-add 'org-schedule       :after (lambda (&rest _rest)  (org-save-all-org-buffers)))
+     (advice-add 'org-store-log-note :after (lambda (&rest _rest)  (org-save-all-org-buffers)))
+     (advice-add 'org-todo           :after (lambda (&rest _rest)  (org-save-all-org-buffers)))
+     #+END_SRC
+
+     这样在调用 org-deadline, org-schedule, 或者 org-store-log-note, 或者 org-tode 的时候，会插入调用 org-save-org-org-buffers
+**** view
+
+***** log view
+
+      当记录循环任务的时候，org-agenda 并没有每天创建一个任务，而是当每次任务完成的时候，将任务的 timestamp 移动到指定的日期。
+      这种情况下，如果我们第二天做回顾，我们就不知道昨天我们到底都做了什么。此时可以打开 log view, 可以查看到昨天都做了什么的详细记录信息。 可以在 org-agenda 界面里使用 vl 来打开 log view. v 代表 view, l 代表 log
+
+
+
+*** lspmode
+**** 补全
+     可以使用 company-complete 进行补全的操作，一般情况下这个操作都会被绑定到 M-/ 键位上
+*** magit
+**** 分割 unstaged hunk
+     当使用 magit 的 status 的时候，如果一大段代码，只想提交一段，可以使用 C-SPC 选中想要 stage 的代码片段，
+     然后使用 S(stage) 就可以将 hunk 分割开。
+** emacs 基本理论
+*** emacs 命令
+    emacs 中所有的按键都被绑定到 command 上。emacs 上大概有三千多个命令。经常用到的命令都会绑定到相应的快捷键上。
