@@ -1,0 +1,19 @@
+McPAT: Multicore Power Area and Timing
+
+1. 可以仿真出芯片的面积
+2. 90nm-22 nm
+3. 
+
+
+inorder 和 out-of-order 分别是什么？区别是什么？
+
+ITRS:  
+
+功耗分为三部分：dynaic, short-circuit, leakage 
+
+** 名词缩写
+| 缩写 | 全称                    | 详解 |
+|------+-------------------------+------|
+| AGU  | Address Generation Unit |      |
+|      |                         |      |
+** GPU SIM memory 管理

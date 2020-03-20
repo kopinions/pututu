@@ -1,0 +1,43 @@
+#+BEGIN_SRC shell :dir "/sudo::" :results none
+sudo apt install -y curl zsh fzf tmux vim zplug autojump sshfs
+#+END_SRC
+
+#+BEGIN_SRC shell :dir "/sudo::" :results none
+  curl https://build.opensuse.org/projects/home:manuelschneid3r/public_key | sudo apt-key add -
+  echo 'deb http://download.opensuse.org/repositories/home:/manuelschneid3r/xUbuntu_19.04/ /' | sudo tee /etc/apt/sources.list.d/home:manuelschneid3r.list
+  sudo apt update
+  sudo apt install -y albert
+#+END_SRC
+
+#+BEGIN_SRC shell
+apt install meson
+apt install libdrm-dev libdrm-intel1 libwayland-dev wayland-protocols libwayland-egl-backend-dev libx11-dev libxext-dev
+apt install libxdamage-dev libxcb-glx0-dev libx11-xcb-dev libxcb-dri2-0-dev libxcb-dri3-dev libxcb-present-dev libxshmfence-dev
+apt install libxxf86vm-dev libxrandr-dev
+apt install emacs llvm libelf-dev bison flex
+#+END_SRC
+
+#+BEGIN_SRC shell
+sudo apt install clangd
+#+END_SRC
+
+#+BEGIN_SRC shell :dir "/sudo::" :results none
+sudo apt install gnome-shell-extension-autohidetopbar
+#+END_SRC
+
+** problem
+1. no module name setuptools
+  #+BEGIN_SRC shell
+    apt install python-setuptools
+  #+END_SRC
+2. wayland-scanner not found
+  #+BEGIN_SRC shell
+    apt install libwayland-dev
+  #+END_SRC
+3. libdrm-intel1 should > 2.4.100 | amd has higest requirement
+  libdrm-intel1 2.4.100 only exists under ubuntu focal, so
+  #+BEGIN_SRC conf
+  deb http://cz.archive.ubuntu.com/ubuntu focal main
+   #+END_SRC
+
+

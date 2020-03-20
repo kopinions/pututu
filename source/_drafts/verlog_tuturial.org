@@ -1,0 +1,168 @@
+** 集成电路有两种类型：
+
+ 1. 组合电路
+ 2. 时序电路
+
+通俗的解释组合电路就是一个短的水管一段放水一边就直接有水。
+时序电路是一个小的蓄水池,隔一段时间去开一次阀门。就会放出一部分的水。可以想象成梯田
+
+RTL: Register Transfer Level. 寄存器传输级。包括时序电路和组合电路的电路。
+
+
+非阻塞赋值是否是多个硬件电路存在？
+
+每个不同的 team 会有不同的 convention. 一般 top 指的是最顶层的模块。
+
+转换 verilog 到 system c 应该是一些 pattern 的，比如硬件的某些实现模式，应该有什么样的模式。。
+
+** 逆向工程
+
+*** 区分关注点
+
+*** 基于背景知识
+
+*** 浮点，指令，lane, normal, 计算原理，各种模式 dcv, sticky 各种背后的东西
+
+*** paper , 处理器设计细节，需要考虑的元素
+
+*** 首先先有整体的架构，然后在对应代码，或者指令的的实际的功能文档，和原理，然后再对应相应的代码
+
+lane_mask 的 概念
+lane_size 
+
+demnormal, normalize
+
+fix, unfix, float
+运算的基本原理，比如整型相加，浮点数相加，之类的基本的计算原理
+
+
+ 变量在被综合的时候对应的线路是什么？
+变量和逻辑都可以被综合，综合的时候对应的硬件电路是不一样的。。
+
+我们只要搞懂 指令做的事情，就可以知道如何去写？
+generate 的功能是什么？ verilog
+
+做这个转换的最根本的核型原因是什么？simulation? PPA
+
+芯片设计的是 domain 非常相关的。处理的就是将功能以硬件的形式表达出来，或者优化。
+
+
+** 语言要素
+
+*** 数据类型
+    
+**** 线网类型
+表示 Verilog 结构化元器件之间的物理连线。线网的值由连接的元件值决定，例如连续赋值，或者门的输出。
+如果没有连接（驱动元件），线网的缺省值为 z(高阻). 
+典型的线网类型为 wire.
+**** 变量类型
+表示一个抽象的数据单元（在 IEEE 2001 公布之前，称之为寄存器类型）。变量类型只能在 always,或者 initial 语句块中
+进行赋值。变量的值一直保持，直到下一次赋值。未初始化的变量的值为 x(未知)
+
+变量类型有：reg, integer, time, real, realtime
+*****  reg 类型： 
+reg [signed] [][msb:lsb]] reg1, reg2;
+***** 存储器（memories）
+寄存器是由 reg 变量组成的数组。存储器的变量申明为：
+
+#+BEGIN_SRC verilog
+reg [[msb:lsb]] memory1[upper1:lower1]
+                memory2[upper2:lower2];
+#+END_SRC
+
+需要注意的是存储器赋值不能在一条语句中完成，但是 reg 变量却可以。
+
+#+BEGIN_SRC verilog
+  // trans 是变量类型
+  reg [5:1] trans;
+  // reg 变量可以通过一个语句进行赋值
+  trans = 5'b00000;
+
+  // 是 5 位的存储器类型
+  reg trans [1:5];
+  // 这个赋值是不合法的
+  trans = 5'b00000;
+#+END_SRC
+
+对于存储器的赋值有如下的几种方式
+1. 分别对寄存器中的每个字赋值
+#+BEGIN_SRC verilog
+  // rom 是一个 4 位宽的 reg 组成的存储器
+  reg [3:1] rom [3:0];
+  // 只能通过字的赋值来对寄存器进行赋值
+  rom[0] = 4'h0;
+  rom[1] = 4'h1;
+  rom[2] = 4'h1;
+  rom[3] = 4'h0;
+#+END_SRC
+2. 通过系统任务：readmemb, readmemh 进行赋值
+#+BEGIN_SRC verilog
+  // rom 是存储器类型
+  reg [3:0] rom [3:0];
+  // 通过 rom.patt 文件对 rom 存储器进行初始化
+  $readmemb("rom.patt", rom);
+#+END_SRC
+
+其中 rom.patt 内容如下所示
+#+BEGIN_SRC text
+1101 1111
+// this line is comment
+/* this line is also comment */
+@2 1111
+@3 0000
+#+END_SRC
+
+在 rom.patt 中可以包含空白位置（空格，tab, 换行），和注释信息（ //, /*xxxxx*/）。对于 readmemb, 所有的数字只能是 2 进制
+对于 readmemh, 所有的数字只能是 16 进制。也可以通过 @hex_address value 的形式来对存储器指定位置进行赋值。
+***** 整数型（integer）变量
+整型变量可以作为普通变量使用，通常用于高层次的建模。
+integer integer1,integer2;
+***** 时间（time）变量
+时间变量用于存储和计算时间。
+time events[0:31]; // 时间变量数组
+***** 实型（real）和实型时间（real time）变量
+real real_reg1;
+realtime real_time1;
+***** 数组
+线网和变量的多维数组可以通过一条数组语句进行声明。
+#+BEGIN_SRC verilog
+  wire push_bts[0:4];
+  reg [0:7] fifo [0:63];
+
+#+END_SRC
+**** reg 和 wire 的区别
+reg 变量只能在 always 或者 initial 语句中赋值。
+wire 线网只能使用连续赋值语句进行赋值。assign xx=1'b0。 或者通过模块实例化的的端口赋值。
+初始化后， reg 的值变为 x(未知), wire 的值变为 z(高阻)
+
+wire 可以被赋予强度值，但是 reg 类型不能被赋予强度值。
+*** 参数（parameter）
+#+BEGIN_SRC verilog
+parameter [signed][[msb:lsb]] param1 = 1b'0, param2=1'b1;
+#+END_SRC
+
+参数经常用来指定一个模块的位宽之类的配置，从而在实例化的时候，指定不同的位宽行为。parameter 的作用于是模块的内部
+
+#+BEGIN_SRC verilog
+  module addr_decoder(addr, sel);
+     parameter AW = 16;
+     input wire [AW-1:0] addr;
+  endmodule
+
+  // 通过这样的模块初始化的方式，来进行参数的初始化，从而对模块进行更加灵活的配置。
+  module addr_decoder 
+    #(
+      .AW(32))
+     m_addr_decoder 
+       (
+	.addr(xxx),
+	.sel(xxx)
+	);
+   
+#+END_SRC
+*** 局部参数（ localparam ）
+局部参数是模块内部的参数。不能通过模块实例化的过程中通过参数转递，或者重新定义参数来对局部参数进行修改。
+
+#+BEGIN_SRC verilog
+localparam hsel = 1'b1
+#+END_SRC

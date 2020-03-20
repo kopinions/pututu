@@ -1,0 +1,1063 @@
+
+** MCU 设计入门
+
+*** 常见单词缩写
+RTC: Real Time Clock,用来跟踪记录当前时间的集成电路。
+PMU: power managment unit , 做 wake up 的处理
+VCC: voltage collector, 漏极电压
+VDD: voltage drain drain, 集电极电压
+VSS: Voltage Source 源极电压， 在 CMOS 中指负电源，在单电源中表示 0 伏，或者接地
+PPA: Performance, Power Area, 芯片的性能指标, 性能，功耗，面积。决定性能的一般有俩，带宽band-width，延迟 latency
+EFlash: Embeded Flash
+DAP: Debug Access Port, Debug 访问端口， 将外部 debug 的接口转换成内部debug 支持的接口
+TPIU: Trace Port Interface Unit
+XN: eXecute Never, 指令不能放在对应标识的空间，标识对应的段，CPU 不能从这个地址空间取指令。
+DPU: data processing unit
+MPU: memory protection unit, 内存保护，限制读写之类的。如果需要运行 OS, 这个模块就是必须的。
+NVIC: Nested Vectored Interrupt Controller 
+FPB: Flash Patch Breakpoint 打断点，需要比较CPU 取指令的地址，和当前内容比较
+DWT: 
+PLL: Phase Lock Loop, 将频率稳定的晶振作为基准信号，倍频至特定频率的信号。详见[[https://zhuanlan.zhihu.com/p/44326917][PLL (锁相环)]]
+SWD 是什么？
+PPB: Private Peripherial Bus 
+BB: Bit Band, 一个地址对应一个字节的数据，如何去访问一个字节中的bit?, 传统的做法：把整个字节读出来，然后将不需要的bit mask 掉，
+然后在去写寄存器，这种情况下需要三个指令， 需要 5个 cycle 才能完成。 一个简单的方式是：映射地址空间
+REMAP 给某一个 bit 一个地址空间，4字节对齐，直接对指定位进行操作。
+ITM: Instruction Trace Macrocell,可以将 Trace 的信息放在 ITM 寄存器。 不会影响性能，因为他是和CPU 是两个通路，CPU 不会执行
+额外的指令进行处理。通过 Trace 的支持工具读取 ITM 寄存器完成 Trace 功能
+ETM: Embedded Trace Macrocell ARM 中指令 TRACE 功能，显示出整个指令执行情况，是否是被执行了。
+DWT: Data Watchpoint & Trace Unit 
+了解 REMAP 机制
+WFI: Wait for Interrupt
+WFE: Wait for Event
+FClk: Free Running clock, 这个 clk 需要一直存在
+HClk: System Clock, 是 CPU 中的主要 CLK, HClk, FClk 要求同频率，同源， Hclk 可以在低功耗模式下关闭。
+Sys TImer: OS 级别任务调度，需要根据事件进行任务调度，这个是计时的counter,可以选择 CPU 时钟或者外部时钟计数
+IRQ: Interrupt ReQuest
+LVL: level
+LVL_WIDTH: 每个中断需要由中断的优先级， 优先级的宽度来代表支持优先级的个数。数值越小，优先级越高。
+WIC: Wakeup Interrupt Controller
+UPF: 
+NMI: Non maskable interrupt(SW can not disable the interupt)
+WIC: 
+TCM: Tightly Coupled Memory, 是一块 SRAM, 这个 SRAM CPU 提供一个接口，可以和流水线紧密的结合在一起
+EFUSE: 电子熔断丝
+PSR: Program Status Register 程序状态寄存器
+
+
+| 缩写   | 全称                      | 含义                                                                         |
+|--------+---------------------------+------------------------------------------------------------------------------|
+| CDC    | Clock Domain Cross        | 跨时钟域，电路需要使用来自不同时钟域的信号，这种情况下需要进行时钟同步的处理 |
+| HSI    | High Speed Internal       |                                                                              |
+| HSE    | High Speed External       |                                                                              |
+| LSI    | Low Speed Internal        |                                                                              |
+| LSE    | Low Speed External        |                                                                              |
+| PDDS   | Power Down Deep Sleep     |                                                                              |
+| LPDS   | Low Power Deep Sleep      |                                                                              |
+| EXTI   | External Interrupt        | 外部中断，来自 GPIO                                                          |
+| UPF    | Unified Power Format      |                                                                              |
+| RCC    | Reset Clock Control       | STM32 有一个单独的寄存器用来存储这个状态                                     |
+| DFT    | Design For Test           |                                                                              |
+| DFM    | Design for Manufacture    |                                                                              |
+| TARMAC | Trace ARm ACcess          |                                                                              |
+| ISS    | Instruction Set Simulator |                                                                              |
+| ADS    | Arm Developer Suite       |                                                                              |
+| DSM    | Design Simulation Model   |                                                                              |
+| TCL    | Tool Control Language     | 工具控制语言                                                                 |
+|        |                           |                                                                              |
+
+
+
+*** 常见的知识
+
+**** 晶振为什么能产生固定频率的信号
+因为晶振的物理特性，晶振在两端有电压的时候，会让晶体产生形变，形变又会触发电压的变化，所以这种情况下会产生震荡，所以可以
+使用晶体的这种特性制作固定频率的型号。信号的频率跟晶体的加工工艺，大小等特性有关系。
+
+** Power Supply
+
+对于数字电路来说，VCC 是电路的供电电压，VDD 是芯片的工作电压。VSS 是接地点。
+有些 IC 既有 VDD 引脚，又有 VCC 引脚，说明这种电路在电路内有电压转换功能，这个时候VDD 仅仅是给组建内部的数字或者模拟
+系统供电， 而 VCC 是给包括外设，和内部系统供电，所以 VCC 的电压必须比 VDD 高。
+
+内核1.1v
+
+
+regulator 做调压 , 是模拟电路
+
+vdd 2.0-3.6 v bei 调压到1.1v
+
+vss
+vdda 模拟电源
+vssa 模拟电源
+
+
+Low Power Mode
+
+睡眠模式： CPU 时钟关闭
+
+
+
+Cortex M3 从 0地址启动，从零地址启动的时候可以选择，从 flash 还是从 rom 启动。可以通过 remap 的功能，将零地址 map 到 rom 或者 flash 进行启动。可以通过 CPU 的pin 脚来选择，采用那种方式。CPU 发出的是 0 地址
+CPU 上有一个 mux, 可以通过 mux 的隐射映射到不同的 flash / rom
+
+remap 的原理？
+
+CPU 在上电的时候，默认会从 0x0 地址取指令进行执行，但是这部分
+
+pin-mux  管脚复用 multiplexer
+
+** Clock
+
+OSC_IN
+
+OSC32_IN 给 RTC 使用
+OSC32_IN 给
+
+DSP 也有相应的指令，这种是对于数字信号处理更加高效的一些指令
+
+
+Arm 的 Trust Zone 是什么意思？
+芯片面积太大就会导致成本特别高。所以一般片上的存储（ROM, RAM） 不会很大，一般都是片外存储
+
+** Cortex-M3 CPU 架构
+Cortex-M3 使用的是 ARM V7-M 
+
+*** ARM v7M 架构
+    
+**** 指令集
+可以通过代码密度来反映单位空间可存储指令的数量
+****** Thumb 指令集
+ 16 位指令集
+****** Thumb 2 指令集
+ 16 位和32 为混合指令集。
+
+****** Arm 指令集
+ 32位指令，ARM 指令集效率会很高，因为指令更长，所以他可以在指令中可以处理更长的立即数。所以效率会跟高。
+
+***** 指令类型
+1. 数据处理指令
+add/sub
+2. 访存指令
+load/store
+1. DSP/SIMD
+2. 浮点指令
+
+
+
+***** 寄存器
+
+***** 流水线
+曲值－》译码－》执行
+
+**** 电源管理
+两种模式：Sleeping, 和深度睡眠
+SleepNow: WFI
+Sleep on exit: WFE
+CPU 睡眠之后，外部中断不能睡眠。NVIC  模块来见测中断，进行唤醒操作。
+
+当睡眠模式的时候，一般会采用外部时钟，这种情况下外部时钟的频率一般比较低，所以功耗更小
+
+可以通过在片外增加 WIC 控制器，将 Cortex M3 的整个电源关闭，通过WIC 来检测外部中断，这样整体的功耗会更小
+**** 内存模型
+内存地址，CPU 去管理，不同类型的内存管理，不同数据类型去管理，内存保护， 
+内存管理：
+内存被分为 8 个 512 M 的内存块
+
+***** Memory Map Arch
+ ???
+ 只需要通过 LDR/SDR 进行访问？
+
+
+***** 内存分块
+记录。。。？？？
+
+***** 内存类型
+      
+****** Normal Memory
+只是数据，多次访问不会有副作用。基本上很多内存（RAM/ROM）都是 normal memory
+对于一下几种模式比较灵活：
+1. 缓存
+2. 缓冲区
+3. 数据合并（两个16位，可以变成一个 32位的写，这种情况下可以通过一个时钟周期来处理）
+
+一般在 bus 上就会有一些标识数据能进行的一些模式操作。
+
+****** Device Memory
+有副作用，外设寄存器。在映射内存块中外设区的的都称之为 device memory
+device memory 不能 cache, 因为 cache 有很多 cache line 组成，？？？？
+可以支持 buffer
+不能够 merge, 为什么？？？？
+****** Strong Ordered Memory
+最强要求一致性的内存
+系统控制类的寄存器
+****** 共享
+***** 内存类型配置
+      指令一般放在 Normal Memory, 架构中默认定义了每个内存分块的的内存类型
+可以通过 MPU: memory protection unit 来更改内存分块的内存类型。
+
+不能被 cache, 不能被 buffer, 不能被 merge
+
+
+***** VA -> PA
+VA 是软件看到的地址，PA 是实际存在的地址，这个地址一般是由 BUS 上定义的各种地址空间定义的。这个通过 CPU 上的 MMU
+来进行操作。这个一般只有在 ARM A 系列中存在。在 ARM V7 M 系列中，只有 PA 存在，因为只有 PA, 所以效率比较高。
+
+因为 M 系列对效率要求比较高。
+
+***** 地址映射
+
+***** 缓存
+**** 编程模型
+各种通用寄存器，控制寄存器，执行优先级之类的一些约束。
+CPU 的状态
+OS 一般工作在特权模式
+APP 一般工作在用户模式（非特权模式），一些系统控制的寄存器是不能被这种模式所访问的。
+***** load/store 架构
+所有的处理必须通过将 mem 中数据加载到寄存器，处理完写入寄存器，不能直接对 mem 进行操作。通过 LDR/STR 进行操作
+***** 寄存器
+****** SP
+对 stack 进行记录的处理，一般会有两个 : MSP(Main Stack Pointer), PSP(Process Stack Pointer)
+MSP 是给 OS 使用的，PSP 是给应用程序使用的，通过这种方式，让操作系统和应用不相互影响。
+ARM 中堆栈是往下增长的，意味着压栈会导致地址变小。
+****** LR(Link Registor)
+当函数发生跳转的时候，会将放回地址记录在 LR 中，这样在函数执行完毕的时候，直接将 LR 的值赋值给 PC, 然后继续执行
+****** PSR(program status registor)
+****** 控制寄存器
+堆栈放在 MSP,还是 SP,之类的控制星系
+****** PRIMASK
+提升正在执行中断的优先级
+****** FAULTMASK
+***** 模式
+****** Thread
+正常应用的模式下，应用程序是着这种模式下运行，这种状态下可以有各种各样的组合 MSP+PRIV, PSP+PRIV, MSP+UNPRIV, PSP+UNPRIV
+可以通过 Control Registor 来控制是特权模式还是非特权模式
+****** Handler
+中断后进入的模式，这种情况下使用 MSP 和 PRIV 模式。
+**** 异常处理
+
+***** 中断处理
+IRQ, 
+***** 内部故障
+内存干扰错误，
+**** 调试相关（Debug）
+***** External Debugger
+调试板，通过 JTAG 接口，或者 SWD 接口进行
+JTAG 是 4-5 个pin, 因为 RST pin 不是必须的。
+SWD: 2 个 pin, 一个 CLK, 一个双向的数据  pin
+***** 断点寄存器
+
+***** 断点资源协调， CPU 进入调试状态，事件处理，
+**** 缓存
+*** Cortex
+
+*** IP 都有那些
+
+
+bit binding 的原理是什么？
+一个地址代表一个字节，如果需要对某一个字节中的某一位进行操作，
+别名的原理是什么？
+jtag 的原理是什么？
+clk_gate 的作用是什么？
+
+CLK_GATE, 
+AHB_CTRL:
+在 AHB 协议里，需要定义 H_Ready 为低的情况下，H_Choice 总线
+AHB 协议是什么？
+
+一般的flip flop 由一个电源，如果要做低功耗， flip flop 有两个电源。 这种 flip 称之为 retain ,
+这种情况需要设置 isolation 来隔离正常电压信号和低功耗电压信号。 一般用的比较少，因为会导致芯片空间大很多（由多余的寄存器
+以及相应的电源，以便会导致芯片面积增大 30%）
+
+CPU Power domain:分为两种模型，正常工作，和debug 的power 模型。如果 debug 模式开启，debug 工具可以坐简单的控制
+上电复位：称为硬复位，会对整个芯片进行复位，
+
+SysReset: 软复位，不会对整个芯片复位，而是对CPU 进行复位
+
+Rest 需要坐同步，因为 同步释放，异步复位， 坐 DFT 的时候，需要 bypass reset 的同步。做DFT 的时候，每个 
+
+SELEP HOLD REQUEST: 不能随意的唤醒 CPU, 只有 CLK 比较稳定的时候，才能将CPU 唤醒，否则 CPU 有可能处于不稳定状态。
+
+
+CPU 启动程序：
+CPU 从 0地址启动，
+
+通过 memory compiler 来生成 rom, 需要定义初始化的文件
+
+
+*** Cortex M3 集成和实现
+
+**** 基本概念
+
+****** 集成
+
+集成是将 ARM 的处理器和 SOC 设计集成到一起的过程。主要要做的事情由如下几种
+
+1. 将需要的时钟和复位的线链接到处理器
+2. 将处理器和外设，总线等相连
+3. 针对添加的处理器，设计测试方案，并实现测试方案
+4. 在 SOC 设计的基础上，验证处理器是否正常
+
+必须要考虑的两件事情
+
+1. 接口，尤其是没有使用的接口应该如何处理。
+2. 验证
+
+****** 实现
+
+
+
+MUX 和仲裁的区别和关系是什么？ 
+1'b1 和 1 的区别是什么？
+如何指定NUM IRQ 为 240
+
+
+AHB:
+HREADY 信号：当这个信号为低的时候，称之为 Wait state, 相当于 slave 通知master 
+需要等待
+HTRANS: 在 Wait state 的时候，Non SEQ, 说明发出一笔传输。HTRANS  发出 Non SEQ,
+如果 slave 不能响应，这时候就需要将 ready 拉低，这种情况下 Master 就处于 IDLE,
+下一个时钟周期的时候，MASTER 可以再次发起一笔数据传输。
+HREADY 为低的时候，允许由 IDLE -> NONSEQ 状态（重新发起传输）。
+HREADY 为低的时候，HTRANS 不能由 NONSEQ-> IDIL(取消传输)
+在 HREADY 为低的时候（Slave 处于 waiting state 的时候）， 不能针对 HTRANS 进行采样
+
+
+AHB 分成两个阶段，第一个阶段发送地址，第二个阶段发送数据。在两个阶段中间如果 slave
+不能相应，需要使用 HREADY 来通知 master 进行等待。
+
+CLock 同频同步是什么意思？
+LOCKUP: CPU 出现死锁。这种时候需要 Watch Dog 进行复位。产生一个 SYSRESET 进行复位
+CRG: Clock Register Generation, 主要做 CLock reset 相关的操作
+
+复位信号需要三个 clock cycle,因为是串行复位，需要在多个寄存器间传输。这个3 是跟CPU
+的设计有关系，如果需要复位三个寄存器，就需要 3个clock cycle.
+
+DFT的原则：
+1. Controllable 可控
+2. Observable 可观察
+
+CPU 从0 地址取 sp, 从 04 取 pc, 
+
+warm reset 和 cold reset 的区别是什么呢？
+
+Clock reset 后面三个寄存器复位的原理？
+
+CLOCK_GATING_BYPASS, 主要是为了 DFT, 用来控制是否进行 DFT,
+
+ARM 同步电路设计？？？？
+
+
+SYSTICK: 用来计数， CTCALIB, 用来完成计数相关的，参考的时钟可以是 FCLK, 或者外部的
+时钟 STCLK
+
+一个地址对应一个字节的数据
+
+burst transfer: 突发传输
+ 
+brchstat 是做什么的？
+
+为什么 HRDATAI 是通过 AHB 接，但是 HRREADY 是通过 总线接的？
+
+
+
+ 传输的过程中：Transfer 和 transaction 的关系
+
+区别是： Transaction 一组传输请求，传输请求可能有多笔数据。每一笔数据是一个 transfer.
+如果 Transaction 有多个数据，就可以是 brust transfer. 
+
+
+****** Bus matix
+
+******* Master
+相对于 slave 来讲 bus matrix 是 master, 所以 master 介入端和 slave 相连
+******* Slave
+Bus Matrix 相对与 CM3 来讲它是 slave ,所以 bus matrix 的 slave 接口和 cm3 , 和 dms 相连
+
+
+M3 通过 ICODE, 和 DCODE 发出的请求只能在 0-512 M de 空间，只能访问 ROM, 或者 FLSAH
+System BUS 不能访问 0-512, 所以， SYstem bus bixu 通过 Bus matrix 的 M1 进行访问 slave
+
+
+H 开头的信号是什么意思？
+
+
+HREADYOUT 是 由 slave 给出的
+
+HREADY,其实相当于 HREADYINPUT, 是用来告诉 Slave, 总线上是否还有未完成的 transaction. 没有完成 transaction 的时候不能进行下一轮的 transaction
+** 协议
+*** AHB
+一笔传输一般有连个阶段组成
+1. 地址阶段，一个时钟周期
+2. 数据阶段，若干个时钟周期，由HBURST 决定需要几个时钟周期。可以由 HREADY 延长时钟周期。
+
+**** 信号
+
+| 端口         | Source           | To           | 取值                            | 默认值 | 说明                                                        |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HCLK         | 时钟源           | 各个模块     |                                 |        | 总线时钟，上升沿采样                                        |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HRESETn      | reset controller | 各个模块     |                                 |        | 总线复位信号，低电平有效                                    |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HADDR[31:0]  | Master           | decoder      |                                 |        | 32 位系统地址总线                                           |
+|              |                  | mux to slave |                                 |        |                                                             |
+|              |                  | arbiter      |                                 |        |                                                             |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HPROT[3:0]   | Master           | slave        | PPROT[0]: 0: normal access      |        | 传输保护信号                                                |
+|              |                  |              | PPROT[0]: 1: privileged access  |        |                                                             |
+|              |                  |              | PPROT[1]: 0: secure access      |        |                                                             |
+|              |                  |              | PPROT[1]: 1: non-secure access  |        |                                                             |
+|              |                  |              | PPROT[2]: 1: data access        |        |                                                             |
+|              |                  |              | PPROT[2]: 1: instruction access |        |                                                             |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HTRANS[1:0]  | Master           | mux to slave | 00: IDLE                        |        | 当前总线传输类型                                            |
+|              |                  |              | 01: BUSY                        |        |                                                             |
+|              |                  |              | 10: NONSEQ                      |        |                                                             |
+|              |                  |              | 11: SEQ                         |        |                                                             |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HSIZE[2:0]   | Master           | mux to slave | 000: byte                       |        | transfer 数据的大小。一个 burst 有多个 transfer             |
+|              |                  |              | 001: half word                  |        |                                                             |
+|              |                  |              | 010: word                       |        |                                                             |
+|              |                  |              | 011: double word                |        |                                                             |
+|              |                  |              | 100: 4-word line                |        |                                                             |
+|              |                  |              | 101: 8-word line                |        |                                                             |
+|              |                  |              | 110: -                          |        |                                                             |
+|              |                  |              | 111: -                          |        |                                                             |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HBURST[2:0]  | Master           | mux to slave | 000: SINGLE                     |        | burst 的类型                                                |
+|              |                  |              | 001: INCR                       |        | type: SINGLE/INCRx/WRAPx                                    |
+|              |                  |              | 010: WRAP4                      |        | x 的取值有：4,8,16                                          |
+|              |                  |              | 011: INCR4                      |        | INCR 的 x 的默认取值为 1                                    |
+|              |                  |              | 100: WRAP8                      |        | 和 HSIZE 一起决定下一个数据 位置                            |
+|              |                  |              | 101: INCR8                      |        |                                                             |
+|              |                  |              | 110: WRAP16                     |        |                                                             |
+|              |                  |              | 111: INCR16                     |        |                                                             |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HWRITE       | Master           | mux to slave | 1: WRITE                        |        | 读写控制                                                    |
+|              |                  |              | 0: READ                         |        |                                                             |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HWDATA[31:0] | Master           | mux to slave |                                 |        | 写数据                                                      |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HMASTER[3:0] | arbiter          |              |                                 |        | 选择 master, 在多主机的情况下，由仲裁选择 master,来控制总线 |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HMASTERLOCK  | arbiter          |              |                                 |        | 标记当前总线被某个 master 锁定 |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| EXREQ        |                  |              |                                 |        | Exclusive Request signal                                    |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| EXRESP       |                  |              |                                 |        | Exclusive R                                                 |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HSELx        | Decoder          | slave        |                                 |        |                                                             |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HREADY       | mux              | master       | 1: Transfer done                |        | SLAVE HREADYOUT(output)                                     |
+|              |                  | slave        | 0: Extended Transfer            |        | -> MUX                                                      |
+|              |                  |              |                                 |        | -> MASTER HREADY(input) -> SLAVE HREADY(input)              |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HREADYOUT    | Slave            | mux          | 1: Transfer done                |        |                                                             |
+|              |                  |              | 0: Extent Transfer              |        |                                                             |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HRDATA[31:0] | Slave            | mux          |                                 |        |                                                             |
+|--------------+------------------+--------------+---------------------------------+--------+-------------------------------------------------------------|
+| HRESP        | Slave            | mux          | 0: OKAY                         |        |                                                             |
+|              |                  |              | 1: ERROR                        |        |                                                             |
+*** APB
+ #+BEGIN_SRC dot :file ./mcu/apb_state.png :exports results
+   digraph G {
+   idle -> setup [label="Transfer"]
+   setup -> access[label="一个时钟周期后"]
+   access -> access [label = " READY=0"]
+   access -> setup [label="READY=1\n and transfer"]
+   access -> idle [label="READY=1\nno transfer"]
+   idle -> idle [label=" No Transfer"]
+
+   idle [label="IDLE\nPSELx=0\nPENABLE=0"]
+   setup [label="SETUP\nPSELx=1\nPENABLE=0"]
+   access [label="ACCESS\nPSELx=1\nPENABLE=1"]
+   }
+ #+END_SRC
+
+ #+RESULTS:
+ [[file:apb_state.png]]
+**** 信号
+| 端口        | Source       | To         | 取值                            | 默认值 | 说明                                                                                                            |
+|-------------+--------------+------------+---------------------------------+--------+-----------------------------------------------------------------------------------------------------------------|
+| PCLK        | Clock source | components |                                 |        | 上升沿触发传输                                                                                                  |
+| PRESETn     | 系统总线     |            |                                 |        | APB 复位信号，低电平有效，一般直接和系统总线上的复位信号相连                                                    |
+|-------------+--------------+------------+---------------------------------+--------+-----------------------------------------------------------------------------------------------------------------|
+| PADDR[31:0] | APB bridge   | Slave      |                                 |        |                                                                                                                 |
+|-------------+--------------+------------+---------------------------------+--------+-----------------------------------------------------------------------------------------------------------------|
+| PPROT[2:0]  | APB bridge   |            | PPROT[0]: 0: normal access      |        | Protection Type                                                                                                 |
+|             |              |            | PPROT[0]: 1: privileged access  |        |                                                                                                                 |
+|             |              |            | PPROT[1]: 0: secure access      |        |                                                                                                                 |
+|             |              |            | PPROT[1]: 1: non-secure access  |        |                                                                                                                 |
+|             |              |            | PPROT[2]: 1: data access        |        |                                                                                                                 |
+|             |              |            | PPROT[2]: 1: instruction access |        |                                                                                                                 |
+|-------------+--------------+------------+---------------------------------+--------+-----------------------------------------------------------------------------------------------------------------|
+| PSELx       | APB bridge   | Slave      |                                 |        | 片选信号（通过HADDR 进行译码产生）                                                                              |
+|-------------+--------------+------------+---------------------------------+--------+-----------------------------------------------------------------------------------------------------------------|
+| PENABLE     | APB bridge   | Slave      |                                 |        | 使能信号，这个信号标识一次传输的第二个以及后续的时钟周期。                                                      |
+|             |              |            |                                 |        | 当存在时钟的时候，可以不用 PENABLE 信号，因为 APB setup 只有一个周期                                            |
+|             |              |            |                                 |        | 当有些时候，外设需要省电的情况下，没有时钟，这种情况下可以使用 PENABLE, 和 PSEL 来标志 setup 周期和 access 周期 |
+|-------------+--------------+------------+---------------------------------+--------+-----------------------------------------------------------------------------------------------------------------|
+| PWRITE      | APB bridge   | Slave      | 1: Write                        |        |                                                                                                                 |
+|             |              |            | 0: Read                         |        |                                                                                                                 |
+|-------------+--------------+------------+---------------------------------+--------+-----------------------------------------------------------------------------------------------------------------|
+| PWDATA      | APB bridge   | Slave      |                                 |        |                                                                                                                 |
+|-------------+--------------+------------+---------------------------------+--------+-----------------------------------------------------------------------------------------------------------------|
+| PSTRB       |              |            |                                 |        | Write strobes ,为了缓存一致性所做的考虑                                                                         |
+|-------------+--------------+------------+---------------------------------+--------+-----------------------------------------------------------------------------------------------------------------|
+| PREADY      | Slave        | APB bridge | 1: Transfer done                |        | Slave 是否能在一个时钟周期内进行响应。如果不能需要将 slave                                                      |
+|             |              |            | 0: Extended transfer            |        | 拉低，让 APB bridge 进行等待                                                                                    |
+|-------------+--------------+------------+---------------------------------+--------+-----------------------------------------------------------------------------------------------------------------|
+| PRDATA      | Slave        | APB bridge |                                 |        | 当 PWRITE 为低的时候，由 slave 负责驱动这个信号                                                                 |
+|-------------+--------------+------------+---------------------------------+--------+-----------------------------------------------------------------------------------------------------------------|
+| PSLVERR     | Slave        | APB bridge |                                 |        | 错误信号，如果需要将 APB 接到 AHB ,则将这个PSLVERR 映射到 HRESP[0]                                              |
+|             |              |            |                                 |        |                                                                                                                 |
+
+** 问题
+
+***** FCLK 和 HCLK 的关系是什么？同频是什么意思？
+
+***** TXEV, 和 RXEV 的作用
+
+***** Test Interface 中的 Scan Enable (SE) 信号的作用是什么？
+
+***** HMASTLOCK 的作用是什么？
+
+***** 为什么 HMASTLOCKS 只有系统总线有值？
+
+***** HMASTERS0, HMASTERS3 是三位，这个值是什么？
+     
+
+** 时钟
+
+*** 系统中存在的时钟
+| 端口名称   | 全称                                  | 时钟源         | 信号名称 | 说明                                                              |
+|------------+---------------------------------------+----------------+----------+-------------------------------------------------------------------|
+| HCLK       |                                       |                |          |                                                                   |
+| FCLK       | Free Running Clock                    |                |          |                                                                   |
+| TRACECLKIN | Trace Clock In                        | 时钟管理器     |          | TPIU 跟踪时钟输入，异步与 HCLK 和 FCLK                            |
+| SWCLKTCK   | Serial Wire Clock and jtag Test Clock | JTAG 接口/其他 |          | SWJ                                                               |
+| PORESETn   | Power On Reset                        |                |          | 重置所有 CM3                                                      |
+| SYSRESETn  | Sys Reset                             |                |          | 重置处理器 core, 在 NVIC, FPB, DWT, ITM 中的 debug 逻辑不会被重置 |
+| nTRST      |                                       |                |          |                                                                   |
+| HADDR[IDS] | aHb Address (Icode, Dcode, System)    |                |          | AHB 传输地址                                                      |
+| HTRANSD    | aHb Transfer type                     |                |          | 当前传输类型 'b0'                                                  |
+|            |                                       |                |          |                                                                   |
+
+
+*** 寄存器
+
+**** RCCCR(Reset Clock Control Control Register)
+| 位数 | 功能名称  | 默认值 | 说明                 | 取值                |
+|------+-----------+--------+----------------------+---------------------|
+| [25] | PLLRDY    |      - | PLL clock ready flag | 0: PLL unlocked     |
+|      |           |        |                      | 1: PLL locked       |
+|------+-----------+--------+----------------------+---------------------|
+| [24] | PLLON     |      1 | enable PLL           | 0: PLL off          |
+|      |           |        |                      | 1: PLL on           |
+|------+-----------+--------+----------------------+---------------------|
+| [0]  | PLLBYPASS |      0 | PLL bypass           | 0: normal operation |
+|      |           |        |                      | 1: PLL bypassed     |
+
+**** RCC_CFGR(Reset Clock Control ConFiG Register)
+
+| 位数    | 功能名称 | 说明                                       | 取值                        |
+|---------+----------+--------------------------------------------+-----------------------------|
+| [26:24] | MCO      | Microcontroller Clock Output               | 0xx: No Clock               |
+|         |          |                                            | 100: System Clock(SYSCLOCK) |
+|         |          |                                            | 101: HCLK                   |
+|         |          |                                            | 110: OSC clock              |
+|         |          |                                            | 111: PLL clock              |
+|---------+----------+--------------------------------------------+-----------------------------|
+| [10:8]  | PPRE     | APB Prescaler, set & clear                 | 0xx: HCLK not divided       |
+|         |          | by software. Set the division              | 100: HCLK /2                |
+|         |          | factor of the APB low-speed clock          | 101: HCLK /4                |
+|         |          |                                            | 110: HCLK /8                |
+|         |          |                                            | 111: HCLK /16               |
+|---------+----------+--------------------------------------------+-----------------------------|
+| [7:4]   | HPRE     | aHb Prescaler, the division factor         | 0xxx: SYSCLK no divided     |
+|         |          | of AHB clock. set/clean by software        | 1000: SYSCLK /2             |
+|         |          |                                            | 1001: SYSCLK /4             |
+|         |          |                                            | 1010: SYSCLK /8             |
+|         |          |                                            | 1011: SYSCLK /16            |
+|         |          |                                            | 1100: SYSCLK /64            |
+|         |          |                                            | 1101: SYSCLK /128           |
+|         |          |                                            | 1110: SYSCLK /256           |
+|         |          |                                            | 1111: SYSCLK /512           |
+|---------+----------+--------------------------------------------+-----------------------------|
+| [2]     | SWS      | System Clock Switch Status set/clean       | 0: HSE oscillator           |
+|         |          | by software to indicate                    | 1: PLL                      |
+|         |          | which clock used as system clock           |                             |
+|---------+----------+--------------------------------------------+-----------------------------|
+| [0]     | SW       | System Clock Switch, set/clear by software | 0: HSE                      |
+|         |          | to select SYSCLK source                    | 1: PLL                      |
+|---------+----------+--------------------------------------------+-----------------------------|
+
+
+**** RCC_CFGR1
+| 位数   | 功能名称 | 说明                           | 取值 |
+|--------+----------+--------------------------------+------|
+| [15:4] | PLLMUL   | PLL clock multiplication ratio |      |
+|--------+----------+--------------------------------+------|
+| [3:0]  | PLLDIV   | PLL Clock division ratio       |      |
+|--------+----------+--------------------------------+------|
+
+**** PWR_CR (PoWeR Control Register)
+| 位数 | 功能名称 | 说明                  | 取值                                        |
+|------+----------+-----------------------+---------------------------------------------|
+| [1]  | PDDS     | Power Down Deep Sleep | 0: 当 CPU 深度睡眠的时候，进入 stop mode    |
+|      |          |                       | 1: 当 CPU 深度睡眠的时候，进入 standby mode |
+|------+----------+-----------------------+---------------------------------------------|
+
+
+** 内存系统
+
+*** 类型
+
+ROM/RAM/DDR/FLASH/RegisterFile
+
+存储阵列
+
+阵列会有问题
+word 对应阵列中的一行。但是一个word 并不一定是 32 位的
+
+RegistryFile: 速度比 SRAM 快，但是 RegistryFile 的面积不能做的比较大。
+
+*** SRAM 类型
+High Speed: 读写频率比较高
+High Density: SRAM 可以做的比较大，不是 High Density 的 SRAM size 由限制，不能做的比较大
+Low Power: 功耗比较低的 SRAM
+单端口：读写操作通过一个端口进行
+双端口：读写端口分离
+
+*** Memory Compiler
+输出： 
+Memory Spec, 文档
+Data Sheet
+Simulation Model: Verilog Model, VHDL model
+Memory   Libraries for P&R
+
+EMA/EMAW 调整 SRAM timing
+WEN[p-1:0] write mask
+GWEN: word write mask
+
+Multiplexer Width: 调整长宽比的参数
+
+
+MBIST: Memory built in self test
+rvt: regular voltage
+rf: registry file
+sp: single port
+hdf: high density, frenquency
+RETIN: power 掉电的处理，取决于 lower power 管理是如何做的。
+Back bias: BIASNW
+
+*** 任务
+
+4k: room
+16k sram 做 eflash
+
+BIST: 
+
+** ADC(Analog to digital Converter)
+   
+*** 模式
+连续模式和开关模式模式
+
+*** 精度
+12 bit, 是数字信号，精度跟性能有关联关系
+
+*** 通道
+16 通道
+
+*** 校准
+因为电容原因，转化出来的数字不是很准确
+上电校验。经过一定时间长度的接校验，ADC 输出 READY 信号， ADC 才能做转化
+
+*** 信号
+差分输入信号：
+1. VINP
+2. VINN
+*** 性能
+1. 工艺
+2. 精度
+3. 转换率
+4. 电压
+
+*** 控制方式
+1. 绑死
+2. 寄存器配置
+3. EFUSE 配置
+  
+***** 寄存器
+ADC_SR: Status Register (0x00)
+[31:2]: Not used
+[1]: EOC(End Of Conversion), 硬件转换完成的时候，会设置这个标志位位1, 然后当软件需要进行新一轮转换的时候，需要清除这个标志位。0=incomplete 1=complete
+[0]: Not used
+
+ADC_CR1: Control Register 0x04
+[31:6]: Not used
+[5]: EOCIE (End of Conversion Interrupt) 这里的中断是电平中断。0=disabled, 1=enabled, 中断在 EOC=1 的时候触发
+[4:0]: Not used
+
+ADC_CR2: 0x08
+[22]: SWSTART: 控制开始转换， 0: reset state, 1: start conversion
+[1]: CAL 控制校准，0=calibration completed, 1: enable calibration. 硬件在完成校准后会将 CAL 置位 0(calibration completed)
+[0]: ADON, enable ADC 使能 ADC 0=Disable Adc go to powerdown 1=Enable ADC
+
+ADC_DR: Data Register 0xC
+[11:0] data;
+
+差分型号是什么？
+duty cycle 是什么？
+寄存器挂在 pclkG 的意思是什么？
+
+*** IP
+1. (opm) Operation Mode
+
+
+** 外设
+做外设基本上需要考虑一个外设如何去和控制器进行响应的交互过程。一般交互/控制有两种方式，一种是通过寄存器去访问或者控制，另外一种是通过中断，外设去通知控制器进行相应的处理。
+通过这两种控制手段，可以达到外设控制的闭环。
+*** 寄存器
+**** 状态寄存器
+需要知道外设的状态， FIFO 是否已经满了，ADC 是否还在转换
+
+**** 控制寄存器
+enable 寄存器，之类的。 控制功能
+
+**** 数据寄存器
+读写的数值。比如 UART 外设，CPU 读取数值，CPU 写入数字， ADC 采样到的模拟信号
+
+*** 状态变更方式
+    
+**** 查询寄存器（poll）
+
+**** 中断（interrupt）
+
+
+PLL 锁住是什么意思？
+
+PORESETn: 中的 n 的意思是 negative 表示的是低有效
+
+LOCKUP: CPU 出现死锁（CPU 推出 reset, 然后从mem 取指令，mem 报错误， 然后 CPU 没办法拿到第一条指令， 只能 lockup ）一般情况下产生复位请求。所以一般有 LOCKUPRESET 的信号， 将 CPU 进行复位
+
+** 功能
+*** WatchDog
+** 异常处理
+*** 所属分类
+**** 内部中断
+**** 外部中断
+***** NMI(Non Maskable Interrupt)
+
+ - 软件不能够屏蔽（对于 Interrupt line 可以通过软件进行屏蔽）
+ - 固定优先级 -2
+ - 通常处理紧急事件（watch dog）
+
+***** Interrupt Line
+ - 通常用来链接外设，或者 GPIO
+ - 软件可以用来配置优先级（中断同时到达的时候，优先级越高的越先相应，数值越小，优先级越高）
+*** 信号分类
+- 脉冲中断
+  中断发生的时候电平为高，当进入中断服务程序（中断的状态变为 active）之后，硬件将中断信号清空。等待下次中断到来。中断处理程序不会主动的清除中断。
+- 水平中断
+  中断触发后电平一直保持，直到软件对中断信号进行清除。需要中断服务程序主动的通过控制寄存器去清除中断。
+*** 中断属性
+- 异常编号（如果配置的优先级一样，编号越小，优先级越高。）
+- 向量地址，中断服务程序第一条指令的地址， 一个中断服务程序有一个向量地址。这个向量地址可以是通过偏移计算出来的。
+- 优先级（中断同时到达的时候，优先级越高的越先相应，数值越小，优先级越高）
+
+*** 中断向量表
+
+中断向量表刚开始一定是在 0x0000 0000 地址，刚开始 msp 一定是在 0x0000 0000 地址存放的。
+因为 CPU 是从 0 地址启动的。
+|     地址 | 编号 | 优先级        |   | 类型     | 说明                                  |
+|----------+------+---------------+---+----------+---------------------------------------|
+| 0x40+4*N | 16+N |               |   |          |                                       |
+|      ... |      |               |   |          |                                       |
+|     0x40 |   16 |               |   | EXTERNAL | 外部中断通过 IRQ 引入                 |
+|     0x3C |   15 | SysTick       |   | INTERNAL |                                       |
+|     0x38 |   14 | PendSV        |   |          |                                       |
+|     0x34 |   13 | Reserved      |   |          |                                       |
+|     0x30 |   12 | Debug Monitor |   |          |                                       |
+|     0x2C |   11 | SVCall        |   |          |                                       |
+|     0x28 |   10 | Reserved      |   |          |                                       |
+|     0x24 |    9 | Reserved      |   |          |                                       |
+|     0x20 |    8 | Reserved      |   |          |                                       |
+|     0x1C |    7 | Reserved      |   |          |                                       |
+|     0x18 |    6 | UsageFault    |   |          |                                       |
+|     0x14 |    5 | BusFault      |   |          |                                       |
+|     0x10 |    4 | MemManage     |   |          |                                       |
+|     0x0C |    3 | HardFault     |   |          |                                       |
+|     0x08 |    2 | NMI           |   |          |                                       |
+|     0x04 |    1 | Reset         |   |          |                                       |
+|     0x00 |  N/A | SP_main       |   |          | main 函数的堆栈指针，当发生中断的时候 |
+|          |      |               |   |          | 需要跳转到中断服务程序，此时使用 msp  |
+|          |      |               |   |          | 保存当前 main 函数的堆栈指针          |
+
+
+冷复位的时候，中断向量表的地址是无法更改的。因为 CPU 一定是从 0 地址启动的。
+
+但是可以在冷启动后，已经进入到 main 函数后，我们希望此后发生异常的时候，可以到另外的地址获取中断向量表
+，我们可以通过 VTOR(Vector Table Offset Register) 寄存器来完成更改中断向量表的地址。
+
+**** Device with bootloader(Boot ROM)
+1. 使用 0x00000000 地址（MSP）的 Boot ROM. 启动。中断向量表进行启
+2. 执行启动任务
+3. 设置 VTOR 寄存器的值为 flash 中的中断向量表的值。重置中断向量表中中断向地址，指向到 flash 中的中断服务程序。
+4. 当发生中断的时候，如果 VTOR 有值，直接跳转到 flash 中的中断向量表。
+
+***** NEXT 添加图片
+**** Application load to RAM(没有 Boot ROM, 通过 flash 来启动), Flash 地址在 0x0000 0000.
+1. 从 0x00000000 地址的 flash 启动
+2. 初始化硬件，将外部存储中的程序拷贝到 RAM
+3. 修改 VTOR 指向到 RAM 中的中断向量表。
+4. 发生中断的时候，跳转到 RAM 中的中断处理程序。
+
+
+中断向量表在 0x00000000 地址，但是 bootloader 也在 0x00000000 不会冲突码？
+*** 中断处理过程
+**** RESET
+从 0 地址启动，
+**** 正常运行
+1. main
+2. 中断发生，保存 msp, 并且保存寄存器的值
+3. 找到对应中断向量地址
+4. pc = 中断向量地址
+5. 中断服务程序，执行完成之后 pc= msp,并且恢复寄存器的值
+6. 跳转到 main 函数继续执行
+*** 中断状态
+*** 中断的进入和退出
+**** 进入
+1. 压栈
+2. 获取中断号，并且获取中断向量地址
+3. 获取中断服务程序指令（和压栈并行执行，因为一个读，一个写）
+
+只有等到所有的寄存器压栈完成，才能运行中断服务程序。
+
+对于 CM3 来讲， 中断服务程序的的地址的 [0] 为都为1 ,因为中断服务程序的最低位用来标识指令集的类型，如果该值为0, 则表示 arm 指令集，当该值为 1 的时候，表示 thumb 指令集。
+
+
+**** 退出
+中断执行完之后，要执行一个特殊的指令，指令如下
+#+BEGIN_SRC asm :exports code :eval never
+BX LR ; 将 LR 赋值给 PC 寄存器。 LR 中存了一个特殊的值，标识异常退出， 当CPU 读到这个特殊 PC 的时候，就知道需要进行中断返回。此时需将堆栈 pop 到寄存器。
+#+END_SRC
+根据 pop 出来的 PC 的值，去指令，继续后续的执行过程。
+*** 外设中断设计
+1. 如果是 Level interrupt , 一定要给出一个寄存器，用来控制清除中断信号。让软件能清除中断
+2. 如果是脉冲中断，脉冲的宽度要大于 CPU 时钟宽度。
+3. 如果是脉冲中断，脉冲宽度大于中断程序处理时间，这种情况在中断脉冲到 CPU 前添加一个 pulse 检测的硬件逻辑。将原来的中断脉冲进行一个延迟得到 q1, 在进行一个延迟得到 q2,
+   当 q1 & (~q2) 的时候，产生中断的脉冲信号。
+*** 中断集成
+**** 参数
+ - NUM_IRQ: 最多有 240 个 IRQ, 会影响 PPA
+ - LVL_WIDTH: 优先级为 3-8 位， 会影响 PPA,比较逻辑比较大，
+ - WIC_LINES: Wakeup Interrupt Controller 的宽度
+**** 同步器
+两级寄存器防止亚稳态发生
+**** 中断延时
+- AHB_CONST_CTRL 
+  在 CPU 分支预测失败的时候，可以取消总线的传输。然后直接进入中断服务程序
+- 内存延时
+  - 减少等待
+  - 调整内存结构（添加一块私有存储， 对于 Cortex M 来讲就是 TCM Tightly Coupled Memory）
+- 适当的优先级配置
+  - 设置适当的优先级
+  - 如果需要某个中断延时比较低，可以设置较低的优先级。
+
+    
+** DMA(Direct Memory Access)
+*** CPU 搬数据的原理
+#+BEGIN_SRC asm :exports code :eval never
+LDR R1, 0x000010000 ; 2 clock cycle
+LDR R2, 0x000020000 ; 2 clock cycle
+LDR R0, [R1]        ; 和下面的可以合在一起，因为读写可以在同一个周期内。两条总线
+STR [R3], R0
+#+END_SRC
+*** 类型
+- memory to memory (例子Move flash to SRAM)
+- peripheral to memory(例子UART to SRAM)
+- memory to peripheral(例子SRAM to SPI)
+- peripheral to peripheral ()
+*** 参数
+- source address
+- 原地址单位增量
+- dest address
+- 目标地址单位增量
+- 传输数据大小
+
+一个外设可以占用一个 DMA 通道
+总线是否 idle 是可以看 HTRANS
+
+*** 
+
+** 功耗
+为了低功耗的设计，在低功耗模式下，可以关闭外设从而来降低功耗。所以在设计芯片的时候，一般会有多个信号。在低功耗模式下可以关闭一些时钟信号，以便与降低功耗。对于外设来讲可以有两个
+PCLK, 和 PCLKG. 寄存器会放置在 PCLKG 的寄存器下。
+
+** 电源管理（Power Managment Unit）
+*** CM3 Power Management
+**** 低功耗模式
+***** 低功耗状态设计
+ 1. run / stop / standby / sleep / off
+***** 功耗
+****** 动态功耗
+因为在门电路中，在时钟上升沿，或者下降沿的时候，会有短暂的电流，所以此时会产生动态的功耗
+***** 时钟管理
+****** 时钟源
+1. 内部时钟源是 32k 的。 这个时钟源用来进行 real time clock 和电源管理。
+2. 一般会有一个外接的 4-12 MHz 的时钟，用 PLL 来进行分频和倍频
+****** clock gating
+******* 分层
+1. 低级别的
+根据如下的代码，综合工具会自动生成
+ #+BEGIN_SRC verilog :exports code :eval never
+   always (clk)
+   if (xx)
+   // 这种情况会插 clock gating cell
+   q <= 1'h0;
+   end
+ #+END_SRC
+2. 中级别
+手动实例化 clock gate 模块， 控制模块
+3. 高级别
+手动例化 PMU/ reset 控制
+
+******* APB 的 bus 通过 PCLKG 来进行驱动
+
+****** clock resume
+****** clock frequency adjust
+***** 电源管理
+****** 电源域 & 电压域
+电源域，有些逻辑可以将电源可以关掉
+1. always on (台式机上的电池就是用来维持 always on 的 power domain)
+2. 
+电压域：SOC 中不同逻辑有不同的电压去驱动。不同电压下有不同的频率。
+大小核： 大小核在不同的电压域，多核的情况下，每个核在不同的电源域。
+
+DVFS(Dynamic Voltage Frequence Scaling) 动态电压电源调整
+****** Power up & Power down sequence
+上电和掉电是有一定的过程。不同的 power domain 和不同的 voltage domain 上电也是有一定的顺序的。因为模块之间有相应的依赖关系。
+****** Low power state switches
+不同模式之间切换。精细化的电源管理，来适配不同的使用场景
+***** 物理实现
+****** 综合的时候需要选择合适的 cell(LVT, RVT, SVT, HVT) (Voltage Thresehold, Regular, High, Standard, Low)
+如果电压阈值比较高的话，延迟会比较高。因为电压的升降是曲线，在那个点上决定当前值是 1. 
+******* power gating cell
+******* isolation cell
+在综合的时候，通过 isolation cell 将 power off domain 到 power on 的信号的所有的值 clamp 到 0/1. 
+******* buffer /inverter
+******* state retention
+将一个 power domain 关闭的时候，如果这个power domain 里面有寄存器，如果需要保存寄存器的值，可以设置 state retaintion, 这种情况下 register 默认的会有 retaintion 电路，每个 register 有两个电压， vdd, vddg
+以一个低电压保存寄存器的值。
+****** 内存
+memory explorer: 根据大小，可以去选择不同功耗的
+
+****** 综合 & 后端流程
+1. 时钟
+2. UPF(Unified Power Format), 指定 power domain
+3. 综合工具根据 UPF, 决定插入如下的一些 cell.
+   1. Isolation cell
+   2. State retention flipflops
+   3. Power switchs
+   4. Level Shifter
+      电压转换， 1.1V 到 1.8V, 这种情况下高低电平是不一样的。0.9 v 在 1.1 v 的电压下，是高电平，但在 1.8v 下就是低电平。
+**** Register Level Clock gating
+**** Arch Clock Gates(ACG)
+比如浮点运算单元，可以关闭浮点运算单元。还有比如不做debug 的时候，可以关闭 debug 相关的模块。
+在实现的时候，需要使用特定工艺的模块去替换。
+在设计 rtl 的时候一般会有 model 目录， 里面有若干个目录， generic, 和 smic40, 在 rtl 的时候，我们使用 generic 的 模块，在综合的时候，直接将其改为固定工艺的 cell
+**** 不同的睡眠模式
+***** Normal
+***** Deep
+深度睡眠和睡眠模式，CPU 只会给出对应的型号，如何处理这些型号取决于 SOC 的设计者。
+***** WIC-based
+****** NEXT 中断需要 wic latch 一下（需要记录）
+通过 WIC_PRESENT 控制进行 CM3 的例化。
+WIC_LINE 外部有多少个中断能唤醒 CPU. 
+CPU 在睡眠前需要和 WIC 进行一次通信。因为有些中断能够唤醒 CPU ,所以这种情况下，CPU 需要告诉 WIC 那些中断能够唤醒 CPU. 设置 MASK 信号
+
+***** 唤醒
+****** WFI 模式下的唤醒
+******* NMI
+******* 外部中断（External Interrupt）
+******* 调试事件（Debug events）
+****** WFE 模式下唤醒
+******* NMI
+******* 外部中断（External Interrupt）
+******* 调试事件（Debug events）
+******* RXEV pin
+***** 如何进入
+Sleep now:   使用 WFI(Wait For Interrupt)/WFE(Wait For Event) 指令进入。 通过 RXEV 信号来接收事件。
+Sleep on exit: 当中断服务程序退出的时候，进入睡眠模式。比如抄水表，插卡的时候显示数据，当卡拔出的时候，进入睡眠模式。初始化通过设置 System Control Register SLEEPONEXIT 位， 然后执行 WFI/WFE, 然后进入睡眠
+在睡眠模式下，如果有中断，执行中断服务程序，执行完中断服务程序后，立即进行睡眠模式。
+***** 掉电的过程中中断来了 
+*** STM32 电源管理
+**** 电源组件
+***** Power on Reset
+vdd 小于指定阈值，remain reset mode
+***** PVD(Programmable Voltage Detector)
+***** Voltage regulator
+让电源输出恒定的电压值
+***** 
+**** Power Supply
+***** VDD = 2.0 to 3.6v
+***** VDDA = 2.0 to 3.6v
+***** VBAT = 1.8v to 3.6v
+
+** SOC verification
+
+** 问题
+*** 同步器的原理是什么？
+*** 在 rtl 中，打一拍的意思是什么？
+*** 生么叫亚稳态？
+*** output reg 代表什么意思？
+*** 为什么在 mcu_sysctrl 中 HADDR 信号的宽度是 12 位？
+*** 不同 clock domain 为什么要进行同步？
+*** 为什么在进入 stop 或者 standby 模式的时候需要发出 stop req ,或者 standby req?
+*** noz 是什么的缩写？
+*** bit band 的原理是什么？
+** 问题以及答案
+*** 模拟的电路为什么对工艺的要求比较高？
+ 因为模拟电路的微缩不能超过某个特定的极限。因为物理世界的各种原因，需要做各种各样的 trade off. 而且物理世界的各种各样的白噪声，所以模拟电路对工艺的要求非常高。电容值发生 +-20%的
+ 变化都会对整个电路带来非常大的影响。
+
+*** 差分信号的原理
+ #+DOWNLOADED: https://img-blog.csdn.net/20171222175545054 @ 2019-12-12 21:02:45
+ [[file:Clock/2019-12-12_21-02-45_20171222175545054.jpeg]]
+
+ 发送端在发送的时候会发送两个赋值相同，相位相反的型号，入上图所示，接受端会将两个信号进行相减，从而能获得两倍的幅值的型号。
+ 抗干扰的原理：如果两个信号收到的干扰是一样的，因为在接收端，两个信号是进行相减的处理，所以可以将这个干扰排除掉。
+ 如何让两个信号受到的干扰是一样的？办法之一就是将两根线缠绕在一起（双绞线）。因为电磁学上有一个定义，可以近似的认为双绞线的两个信号受到的干扰是同向，等幅度的。所以一般会用双绞线来屏蔽信号的干扰。
+
+*** 相位和幅度是什么？
+ 根据傅立叶变换，任何一个周期性的运动，都可以通过一些列的简谐波来合成。最简单的简谐波就是正弦曲线和余弦曲线。更加通俗的解释是，对于周期性晕西欧那个，某个时刻，质点的位置。
+
+
+* 代码问题
+
+** mcu_sysctrl.v
+1. 为什么 haddr 的地址宽度是12位？
+2. 为什么 cdc_capt_sync 的 reset 信号是 PORESETn, 而不是 HRESETn, 或者 PRESETn 之类的？
+3. stbyack 为什么和 SLEEPHOLDACK 有关系？
+4. 为什么 byte_sel 不需要根据时钟的上升沿进行处理？
+5. 如果 244行的 rcccr_bits 和 rcccr_lock 合并成一个 reg 变量，然后不同的 always 修改不同的 reg 位是否会有问题？
+6. 为什么还有一个 PLL_LOCK 的信号？
+7. 
+
+
+** mcu_system
+STOPREQ, STDBREQ 都是有谁触发的？是 PMU 吗，CPU 通过 WFI/E 指令进入？
+WKUPEVENT 是来自于哪里？是 wakeup interrupt controller?
+SPI 的信号都有那些？
+I2C 的协议是如何的？
+adc_prdata 的作用是？
+adc_intr 的作用是？
+dmac_ apb 类的接口的作用是？
+fp_excp 信号的作用？
+gpio0_combintr 信号的作用？
+event signals 的信号的作用？是如何跟其他模块进行交互的？
+processor debug signal 的作用？EDBGRQ 的信号是什么？
+processor status : HALTED, TSVALUE, TSCLKCHANGE 分别的作用是？
+
