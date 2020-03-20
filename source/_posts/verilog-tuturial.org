@@ -1,3 +1,20 @@
+#+TITLE:  Verilog 笔记
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
+#+DATE: <2020-02-15 12:40:20>
+#+LAYOUT: post
+#+EXCERPT:  集成电路有两种类型：1. 组合电路 2. 时序电路, 通俗的解释组合电路就是一个短的水管一段放水一边就直接有水。时序电路是一个小的蓄水池,隔一段时间去开一次阀门。就会放出一部分的水。可以想象成梯田
+#+DESCRIPTION: 集成电路有两种类型：1. 组合电路 2. 时序电路, 通俗的解释组合电路就是一个短的水管一段放水一边就直接有水。时序电路是一个小的蓄水池,隔一段时间去开一次阀门。就会放出一部分的水。可以想象成梯田
+#+TAGS: verilog, ic
+#+CATEGORIES: ic,design
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+LATEX_HEADER: \usepackage{xeCJK}
+#+LATEX_HEADER: \setCJKmainfont{Heiti SC}
+
 ** 集成电路有两种类型：
 
  1. 组合电路
@@ -7,45 +24,6 @@
 时序电路是一个小的蓄水池,隔一段时间去开一次阀门。就会放出一部分的水。可以想象成梯田
 
 RTL: Register Transfer Level. 寄存器传输级。包括时序电路和组合电路的电路。
-
-
-非阻塞赋值是否是多个硬件电路存在？
-
-每个不同的 team 会有不同的 convention. 一般 top 指的是最顶层的模块。
-
-转换 verilog 到 system c 应该是一些 pattern 的，比如硬件的某些实现模式，应该有什么样的模式。。
-
-** 逆向工程
-
-*** 区分关注点
-
-*** 基于背景知识
-
-*** 浮点，指令，lane, normal, 计算原理，各种模式 dcv, sticky 各种背后的东西
-
-*** paper , 处理器设计细节，需要考虑的元素
-
-*** 首先先有整体的架构，然后在对应代码，或者指令的的实际的功能文档，和原理，然后再对应相应的代码
-
-lane_mask 的 概念
-lane_size 
-
-demnormal, normalize
-
-fix, unfix, float
-运算的基本原理，比如整型相加，浮点数相加，之类的基本的计算原理
-
-
- 变量在被综合的时候对应的线路是什么？
-变量和逻辑都可以被综合，综合的时候对应的硬件电路是不一样的。。
-
-我们只要搞懂 指令做的事情，就可以知道如何去写？
-generate 的功能是什么？ verilog
-
-做这个转换的最根本的核型原因是什么？simulation? PPA
-
-芯片设计的是 domain 非常相关的。处理的就是将功能以硬件的形式表达出来，或者优化。
-
 
 ** 语言要素
 
@@ -65,14 +43,14 @@ reg [signed] [][msb:lsb]] reg1, reg2;
 ***** 存储器（memories）
 寄存器是由 reg 变量组成的数组。存储器的变量申明为：
 
-#+BEGIN_SRC verilog
+#+BEGIN_SRC verilog :exports code :eval never
 reg [[msb:lsb]] memory1[upper1:lower1]
                 memory2[upper2:lower2];
 #+END_SRC
 
 需要注意的是存储器赋值不能在一条语句中完成，但是 reg 变量却可以。
 
-#+BEGIN_SRC verilog
+#+BEGIN_SRC verilog :exports code :eval never
   // trans 是变量类型
   reg [5:1] trans;
   // reg 变量可以通过一个语句进行赋值
@@ -86,7 +64,7 @@ reg [[msb:lsb]] memory1[upper1:lower1]
 
 对于存储器的赋值有如下的几种方式
 1. 分别对寄存器中的每个字赋值
-#+BEGIN_SRC verilog
+#+BEGIN_SRC verilog :exports code :eval never
   // rom 是一个 4 位宽的 reg 组成的存储器
   reg [3:1] rom [3:0];
   // 只能通过字的赋值来对寄存器进行赋值
@@ -96,7 +74,7 @@ reg [[msb:lsb]] memory1[upper1:lower1]
   rom[3] = 4'h0;
 #+END_SRC
 2. 通过系统任务：readmemb, readmemh 进行赋值
-#+BEGIN_SRC verilog
+#+BEGIN_SRC verilog :exports code :eval never
   // rom 是存储器类型
   reg [3:0] rom [3:0];
   // 通过 rom.patt 文件对 rom 存储器进行初始化
@@ -104,7 +82,7 @@ reg [[msb:lsb]] memory1[upper1:lower1]
 #+END_SRC
 
 其中 rom.patt 内容如下所示
-#+BEGIN_SRC text
+#+BEGIN_SRC text :exports code :eval never
 1101 1111
 // this line is comment
 /* this line is also comment */
@@ -125,7 +103,7 @@ real real_reg1;
 realtime real_time1;
 ***** 数组
 线网和变量的多维数组可以通过一条数组语句进行声明。
-#+BEGIN_SRC verilog
+#+BEGIN_SRC verilog :exports code :eval never
   wire push_bts[0:4];
   reg [0:7] fifo [0:63];
 
@@ -137,13 +115,13 @@ wire 线网只能使用连续赋值语句进行赋值。assign xx=1'b0。 或者
 
 wire 可以被赋予强度值，但是 reg 类型不能被赋予强度值。
 *** 参数（parameter）
-#+BEGIN_SRC verilog
+#+BEGIN_SRC verilog :exports code :eval never
 parameter [signed][[msb:lsb]] param1 = 1b'0, param2=1'b1;
 #+END_SRC
 
 参数经常用来指定一个模块的位宽之类的配置，从而在实例化的时候，指定不同的位宽行为。parameter 的作用于是模块的内部
 
-#+BEGIN_SRC verilog
+#+BEGIN_SRC verilog :exports code :eval never
   module addr_decoder(addr, sel);
      parameter AW = 16;
      input wire [AW-1:0] addr;
@@ -163,6 +141,41 @@ parameter [signed][[msb:lsb]] param1 = 1b'0, param2=1'b1;
 *** 局部参数（ localparam ）
 局部参数是模块内部的参数。不能通过模块实例化的过程中通过参数转递，或者重新定义参数来对局部参数进行修改。
 
-#+BEGIN_SRC verilog
+#+BEGIN_SRC verilog :exports code :eval never
 localparam hsel = 1'b1
+#+END_SRC
+
+
+#+BEGIN_SRC text :exports none :eval never
+非阻塞赋值是否是多个硬件电路存在？
+
+每个不同的 team 会有不同的 convention. 一般 top 指的是最顶层的模块。
+
+转换 verilog 到 system c 应该是一些 pattern 的，比如硬件的某些实现模式，应该有什么样的模式。。
+
+ 逆向工程
+1. 区分关注点
+2. 基于背景知识
+3. 浮点，指令，lane, normal, 计算原理，各种模式 dcv, sticky 各种背后的东西
+4. paper , 处理器设计细节，需要考虑的元素
+5. 首先先有整体的架构，然后在对应代码，或者指令的的实际的功能文档，和原理，然后再对应相应的代码
+
+lane_mask 的 概念
+lane_size 
+
+demnormal, normalize
+
+fix, unfix, float
+运算的基本原理，比如整型相加，浮点数相加，之类的基本的计算原理
+
+
+ 变量在被综合的时候对应的线路是什么？
+变量和逻辑都可以被综合，综合的时候对应的硬件电路是不一样的。。
+
+我们只要搞懂 指令做的事情，就可以知道如何去写？
+generate 的功能是什么？ verilog
+
+做这个转换的最根本的核型原因是什么？simulation? PPA
+
+芯片设计的是 domain 非常相关的。处理的就是将功能以硬件的形式表达出来，或者优化。
 #+END_SRC

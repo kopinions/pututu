@@ -30,7 +30,7 @@
 
     这个阶段主要会做一些针对三角形，或者顶点的操作。这个阶段可以被细分为更小的阶段，分别为
 
-    #+BEGIN_SRC ditaa :file ./geometry_processing_pipeline.png
+    #+BEGIN_SRC ditaa :file ./realtime-render/geometry_processing_pipeline.png :exports results
     +---------------+    +---------------+   +---------------+   +---------------+
     |               |    |               |   |               |   |     Screen    |
     |    Vertex     |    |  Projection   |   |    Clipping   |   |    Mappming   |
@@ -40,7 +40,7 @@
     #+END_SRC
 
     #+RESULTS:
-    [[file:./geometry_processing_pipeline.png]]
+    [[file:./realtime-render/geometry_processing_pipeline.png]]
 
 **** 2.3.1 顶点着色（Vertex Shading）
      顶点着色主要会做两件事情：1. 计算顶点位置，2. 计算由程序员指定为顶点相关的数据，并将其输出， 比如顶点的法向量，或者顶点的纹理座标等等
