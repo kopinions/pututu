@@ -1,7 +1,21 @@
 *** config
+#+BEGIN_SRC shell :dir "/sudo::" :exports code :eval never
+sudo apt install -y curl zsh fzf tmux vim zplug autojump sshfs
+#+END_SRC
+
+#+BEGIN_SRC shell :dir "/sudo::" :results none :exports code :eval never
+  curl https://build.opensuse.org/projects/home:manuelschneid3r/public_key | sudo apt-key add -
+  echo 'deb http://download.opensuse.org/repositories/home:/manuelschneid3r/xUbuntu_19.04/ /' | sudo tee /etc/apt/sources.list.d/home:manuelschneid3r.list
+  sudo apt update
+  sudo apt install -y albert
+#+END_SRC
+
+#+BEGIN_SRC shell :dir "/sudo::" :results none :exports code :eval never
+sudo apt install gnome-shell-extension-autohidetopbar
+#+END_SRC
 
 1. change default shell
-#+BEGIN_SRC shell
+#+BEGIN_SRC shell :exports code :eval never
 chsh -s /usr/bin/zsh `whoamipa`
 
 #+END_SRC

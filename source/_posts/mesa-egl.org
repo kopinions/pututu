@@ -16,9 +16,6 @@
 #+LATEX_HEADER: \usepackage{xeCJK}
 #+LATEX_HEADER: \setCJKmainfont{Heiti SC}
 
-#+BEGIN_SRC shell :exports none :results none
-mkdir -p ./mesa-egl
-#+END_SRC
 ** mesa 架构详解
 mesa 也称作 Mesa3D 是一个 OpenGL, Vulkan 等规范的一个开源实现。mesa 将这些规范翻译到针对不同硬件平台的实现。mesa 作为一个开源图形技术栈，在整个 linux 图形栈中，得位置如下图所示
 #+BEGIN_SRC ditaa :file ./mesa-egl/linux-graphic-stack.png :exports results

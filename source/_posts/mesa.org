@@ -1,0 +1,43 @@
+#+TITLE:  Mesa3D 编译
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
+#+DATE: <2020-02-15 12:40:20>
+#+LAYOUT: post
+#+EXCERPT:  mesa 源代码编译的过程，基于 ubuntu 19
+#+DESCRIPTION: mesa 源代码编译的过程，基于 ubuntu 19
+#+TAGS: mesa
+#+CATEGORIES: graphics, mesa
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+LATEX_HEADER: \usepackage{xeCJK}
+#+LATEX_HEADER: \setCJKmainfont{Heiti SC}
+
+#+BEGIN_SRC shell :exports code :eval never
+apt install meson
+apt install libdrm-dev libdrm-intel1 libwayland-dev wayland-protocols libwayland-egl-backend-dev libx11-dev libxext-dev
+apt install libxdamage-dev libxcb-glx0-dev libx11-xcb-dev libxcb-dri2-0-dev libxcb-dri3-dev libxcb-present-dev libxshmfence-dev
+apt install libxxf86vm-dev libxrandr-dev
+apt install emacs llvm libelf-dev bison flex
+#+END_SRC
+
+#+BEGIN_SRC shell :exports code :eval never
+sudo apt install clangd
+#+END_SRC
+
+** problem
+1. no module name setuptools
+  #+BEGIN_SRC shell :exports code :eval never
+    apt install python-setuptools
+  #+END_SRC
+2. wayland-scanner not found
+  #+BEGIN_SRC shell :exports code :eval never
+    apt install libwayland-dev
+  #+END_SRC
+3. libdrm-intel1 should > 2.4.100 | amd has higest requirement
+  libdrm-intel1 2.4.100 only exists under ubuntu focal, so
+  #+BEGIN_SRC conf :exports code :eval never
+  deb http://cz.archive.ubuntu.com/ubuntu focal main
+   #+END_SRC
