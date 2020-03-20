@@ -1,0 +1,50 @@
+#+TITLE: 从信号处理的角度理解 OpenGL 多重采样
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL: rising.lambda@gmail.com
+#+DATE: <2019-10-31 12:40:20>
+#+LAYOUT: post
+#+EXCERPT:   因为我们通过离散的点来表达圆，所以不可避免的就会带来一些误差，这些误差在图形处理领域，我们称之为走样（aliasing). 我们需要一些手段减轻或者消除这种误差所带来影响的手段我们称之为反走样（Anti Aliasing）。
+#+DESCRIPTION: 因为我们通过离散的点来表达圆，所以不可避免的就会带来一些误差，这些误差在图形处理领域，我们称之为走样（aliasing). 我们需要一些手段减轻或者消除这种误差所带来影响的手段我们称之为反走样（Anti Aliasing）。
+#+TAGS: opengl, graphics
+#+CATEGORIES: graphics,opengl
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+LATEX_HEADER: \usepackage{xeCJK}
+#+LATEX_HEADER: \setCJKmainfont{Heiti SC}
+ 
+
+通过上一篇文章，我们介绍了，所有的 OpenGL 的应用，都会经过一个图形渲染管线的处理过程，才能将最终结果展示给最终用户。
+
+[[https://www.khronos.org/opengl/wiki_opengl/images/RenderingPipeline.png]]
+
+
+*** 图像显示原理
+首先在生成图像之前，我们需要告诉 GPU 需要渲染什么东西，往往我们是通过数学模型来对一个物体进行建模。比如下图
+
+[[./multisample-related/circle.png]]
+
+我们首先来看几个概念
+
+连续函数：连续函数是如果输入值变化足够小的时候，输出的变化也会随之足够小的函数。如果输入值的某种微小变化，会产生输出值
+的突然跳跃，或者甚至无法定义，则这种函数我们称之为不连续函数。
+离散：离散与连续相对，离散是指分散开来的，不存在中间量的值。
+离散空间：一种简单的拓扑空间，在空间中的所有点，在特定意义下都是相互独立的。
+采样：将信号从连续函数域转换到离散空间的一种过程，一般通过采样器实现。
+离线信号：在连续信号上进行采样得到的信号。
+
+我们通过左边的方式，使用圆形方程，通过不断的逼近，计算圆上的顶点。圆的方程是一个连续函数。
+但是屏幕却是由像素组成的离散空间。所以我们需要通过采样将圆从连续空间变换到屏幕的离散空间。
+
+*** 出现的问题
+如上面右图所示，因为我们通过离散的点来表达圆，所以不可避免的就会带来一些误差，这些误差在图形处理领域，我们称之为走样（aliasing).
+
+我们需要一些手段减轻或者消除这种误差所带来影响的手段我们称之为反走样（Anti Aliasing）。
+
+*** 解决办法
+**** 超采样（super sampling）
+
+***** 优缺点
+**** 多重采样

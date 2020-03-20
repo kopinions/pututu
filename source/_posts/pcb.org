@@ -1,0 +1,154 @@
+#+TITLE:  IOT related 知识
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
+#+DATE: <2019-10-20 12:40:20>
+#+LAYOUT: post
+#+EXCERPT: 金手指是指硬件，所有的信号都是通过金手指传递的。电脑中比较常见的金手指如：内存条的金黄色导电片、显卡与显卡卡槽 ，金手指由多个金黄色导电片组成，因为形状比较像手，所以可以称之为金手指。  
+#+DESCRIPTION: 金手指是指硬件，所有的信号都是通过金手指传递的。电脑中比较常见的金手指如：内存条的金黄色导电片、显卡与显卡卡槽 ，金手指由多个金黄色导电片组成，因为形状比较像手，所以可以称之为金手指。
+#+TAGS: iot
+#+CATEGORIES: iot
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+LATEX_HEADER: \usepackage{xeCJK}
+#+LATEX_HEADER: \setCJKmainfont{Heiti SC}
+
+* pcb 制造
+** pcb 制造行业术语
+*** 金手指(Connecting Finger, Edge Connection)
+    金手指是指硬件，所有的信号都是通过金手指传递的。电脑中比较常见的金手指如：内存条的金黄色导电片、显卡与显卡卡槽    ，金手指由多个金黄色导电片组成，因为形状比较像手，所以可以称之为金手指。
+*** 软金 & 硬金
+    纯金的硬度比较软，所以称之为软金。金和一些化合物（铝，镍，钴）可以形成合金，这种合金物理性质上比较硬，所以称之为硬金。
+    硬金一般用在需要用在受力或者摩擦的地方，比如电路边缘接触点（金手指）。软金一般用在COB(Chip on board) 上打铝线用，或者手机按键的接触面。
+*** 软金和硬金的电镀流程
+    - 软金：酸洗 -> 电镀镍 -> 电镀金
+    - 硬金：酸洗 -> 电镀镍 -> 预镀金（闪金） -> 电镀金镍或者金钴合金
+    -
+*** 预镀金（闪金）：Flash Gold
+    闪金来自英文：Flash. 意思就是快速镀金。是电镀硬金的预镀金程序。它使用较大的电流和含金浓度较浓的液槽，先在镍层形成一层密度比较细致，比较薄的镀金层，以便与后续电镀硬金的操作。
+*** 电镀
+    电镀的目地就是把金镀于电路板的铜皮上。但是金与铜之间直接接触会有电子迁移扩散的物理反应。所以需要先镀一层镍作为隔离层，然后再把金镀在镍的上面
+    所以一般所谓的电镀金，其实名字应该叫做电镀镍金。
+*** assert & deassert
+    assert: Drive a signal to its active voltage level, either high or low.
+    deassert: Drive a signal to its inactive voltage level, either high or low.
+
+* 蓝牙 (bluetooth)
+** 协议
+*** GAP(Generic Access Profile)
+    GAP 用来控制设备的连接和固阳广播。GAP 使设备可见，并决定了设备是否可以连接，或者以怎样的方式连接。比如 Beacon 协议就只是向外进行广播，并不能被连接
+    小米手环就能可以和中心设备（手机）连接。
+**** 设备角色：
+     在 GAP 中分为几个角色，主要的两个为：
+     - 外围设备 (perpheral): 一般是非常小，或者简单的低功耗设备，用来提供数据，可以连接到中心设备，例如小米手环。
+     - 中心设备 (central): 中心设备一般功能比较强大，用来连接外围设备。比如手机。
+**** 广播数据
+     在外围设备中，外围设备通过两种方式向外发送广播数据。Advertising Data Payload(广播数据) 和 Scan Response Data Payload(扫描回复)。 每种数据最长长度为 31 字节。
+     两种广播方式中，广播数据是必须的，因为外围设备需要发送广播数据，让中心设备知道外围设备的存在。扫描回复是可选的，中心设备可以向外围设备请求扫描回复，可以获取一些额外的信息。
+     如设备的名称，或者其他的信息。
+**** 广播流程
+
+
+     #+BEGIN_SRC ditaa :file ./pcb/gap_broadcasting.png :exports results
+
+			 ADV INTERVAL               ADVERTISING INTERVAL              ADV INTERVAL
+       Peripheral   -->|<----------->|<-------------------------------------------->|<----------->|<--
+		    ---++------+-----+-+------+--------------------+---------------++-+------+----+---
+		       || ADV  |     | | ADV  |          ^         | SCAN RESPONSE || | ADV  |    |
+		       || DATA |     | | DATA |          |         | DATA          || | DATA |    |
+		       |+---+--+     | +---+--+          |         +--------+------+| +--+---+    |
+		       :    |        :     |             |                  |       :    |        |
+		       |    |        |     |     +-------+-------+          |       |    |        |
+		       |    |        |     |     | SCAN RESPONSE |          |       |    |        |
+       Central         |    v        |     v     | REQUEST       |          v       |    V        |
+		    ---+-------------+-----------+---------------+------------------+-------------+---
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:./pcb/gap_broadcasting.png]]
+
+
+
+     从上图，可以看出，外围设备会定义一个广播周期，在每个广播周期都发送广播。广播时间周期越长，越省电，但是也越不容易发现。
+**** 拓扑结构
+
+     #+BEGIN_SRC ditaa :file pcb/gap_topology.png :exports results
+                  Broadcast topology
+     +---------+                       +---------+
+     | central |<-------+     +------->| central |
+     +---------+        |     |        +---------+
+                        |     |
+     +---------+     +-----------+     +---------+
+     | central |<----| perpheral |---->| central |
+     +---------+     +-----------+     +---------+
+                        |     |
+     +---------+        |     |        +---------+
+     | central |<-------+     +------->| central |
+     +---------+                       +---------+
+
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:pcb/gap_topology.png]]
+
+     如上图所示，大部份情况下，外围设备通过广播的方式，让中心设备发现自己，从而建立 GATT 连接从而可以传输更多的数据。有些时候不需要建立
+     GATT 连接，外设只需要发射自己的广播即可。这样可以将外围设备的数据传输给多个接收方。因为 GATT 中只能是一个外设一个中心设备之间建立连接并通信。
+     iBeacon 就使用广播的方式来传输数据给多个接收方。
+*** GATT (Generic Attribute Profile, 通用属性协议)
+    GATT 定义了两个 BLE 设备通过 Service(服务) 和 Characteristic (特征) 的东西进行通信。
+    GATT 协议是独占的，也就是说一个外设只能和一个中心设备进行连接。一旦外设完成连接，它就会立即停止广播，这样对其他设备就不可见了。当设备断开，它又开始广播。
+    GATT 基于 ATT (Attribute Protocol). ATT 协议把 Service, Characteristic 保存在一个查找表中，使用 16 bit 的 ID 来进行查找。
+
+**** 拓扑结构
+
+     #+BEGIN_SRC ditaa :file pcb/gatt_topology.png :exports results
+                  Gatt topology
+     +-----------+                       +-----------+
+     | perpheral |<-------+     +------->| perpheral |
+     |  device   |        |     |        |  device   |
+     +-----------+        |     |        +-----------+
+                          v     v
+     +-----------+     +-----------+     +-----------+
+     | perpheral |<--->|  central  |<--->| perpheral |
+     |  device   |     |  device   |     |  defice   |
+     +-----------+     +-----------+     +-----------+
+                          ^     ^
+     +-----------+        |     |        +-----------+
+     | perpheral |        |     |        | perpheral |
+     |  device   |<-------+     +------->|  device   |
+     +-----------+                       +-----------+
+
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:pcb/gatt_topology.png]]
+
+     从上图可以看出，对于 GATT 协议来讲，一个外围设备只能连接一个中心设备，但是一个中心设备可以连接多个外围设备。一旦建立了 GATT 连接，通信就会变成双向的了。
+     对比 GAP 协议的广播拓扑， GAP 协议是单向的。在 GATT 协议上，如果两个外设需要通信，需要使用中心设备进行中转才能进行通信。
+**** GATT 通信事务
+     GATT 通信的双方是 C/S 关系。外设做为 GATT 的服务端，维护了 ATT 的查找表，以及 service 和 characteristic 的定义。中心设备是 GATT 客户端，向服务端发送请求。
+     在 GATT 所有的通信事务中，所有的事件都是由客户端发起（中心设备），由服务器响应（外部设备）。
+
+     在 GATT 连接建立后，外部设备会给中心设备一个建议的间隔，中心设备会在每个间隔去重新连接外部设备，检查是否有新数据。
+
+     #+BEGIN_SRC ditaa :file pcb/gatt_transactions.png :exports results
+
+                           Connection interval           Connection interval           Connection interval
+     Peripheral   -->|<--------------------------->|<--------------------------->|<--------------------------->|<--
+     GATT service ------------------+-----------+-----------------+-----------+------------------------------------
+                           ^        |   SLAVE   |        ^        |   SLAVE   |
+                           |        | send resp |        |        | send resp |
+                           |        +-----------+        |        +-----------+
+                           |              |              |              |
+                     +----------+         |        +----------+         |
+                     |  MASTER  |         |        |  MASTER  |         |
+     Central         | send req |         v        | send req |         v
+     GATT client  ---+----------+------------------+----------+-----------------------------------------------------
+
+
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:pcb/gatt_transactions.png]]
