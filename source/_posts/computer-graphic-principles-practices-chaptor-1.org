@@ -48,7 +48,7 @@
 
 *** 一些数值
 
-#+CAPTION: numbers
+#+CAPTION: 一些数值
 #+ATTR_HTML: border="2" rules="all" frame="border"
 #+ATTR_LATEX: :mode math-inline
 | 数值                                  | 表达式                                                 | 量级     | 单位       | 范围         | 说明                                                                   | 用途 |

@@ -1,4 +1,4 @@
-#+TITLE: Hello World
+#+TITLE: 用 orgmode 在 hexo 上写博客
 #+DATE: <2019-03-05 Sun 08:52>
 #+UPDATED: <2020-02-28 Fri 09:00>
 #+CATEGORIES: org-mode, hexo
@@ -13,14 +13,13 @@ hexo init kopinions
 ***** 安装 org-mode 的 render
 
 #+BEGIN_SRC shell :exports code :eval never
-npm install https://github.com/coldnew/hexo-renderer-org --save
+npm install https://github.com/sjkyspa/hexo-renderer-org --save
 #+END_SRC
 ***** 配置 org-mode 的配置
 #+BEGIN_SRC yaml :exports code :eval never
   org:
     emacs: /Applications/Emacs.app/Contents/MacOS/Emacs
     emacsclient: /Applications/Emacs.app/Contents/MacOS/bin/emacsclient
-    cachedir: ./hexo-org-cache/
     theme: tango-dark
     highlight:
       enable: true
@@ -29,3 +28,11 @@ npm install https://github.com/coldnew/hexo-renderer-org --save
     common: |
       #+OPTIONS: html-postamble:nil
 #+END_SRC
+*** hexo 启动
+#+BEGIN_SRC shell :eval never :exports code
+hexo serve
+#+END_SRC
+*** hexo-render-org 支持的行为
+**** plantuml
+**** ditaa
+**** dot

@@ -16,6 +16,18 @@
 #+LATEX_HEADER: \setCJKmainfont{Heiti SC}
 
 * pcb 制造
+
+** 缩写
+
+| 缩写 | 全称                     | 说明           |
+|------+--------------------------+----------------|
+| THT  | Through Hole Technology  | 通孔插装技术   |
+| SMD  | Surface Mount Device     | 表面贴装器件   |
+| SOT  | Small Outline Transistor | 小外形晶体管   |
+| DIP  | Double In-line Package   | 双列直插式封装 |
+| SOD  | Small Outline Diode      | 小外形二极管   |
+|      |                          |                |
+
 ** pcb 制造行业术语
 *** 金手指(Connecting Finger, Edge Connection)
     金手指是指硬件，所有的信号都是通过金手指传递的。电脑中比较常见的金手指如：内存条的金黄色导电片、显卡与显卡卡槽    ，金手指由多个金黄色导电片组成，因为形状比较像手，所以可以称之为金手指。

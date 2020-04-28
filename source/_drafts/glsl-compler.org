@@ -1,0 +1,22 @@
+#+BEGIN_SRC dot :exports results :file ./glsl-compiler/standard_ast.png
+  digraph G {
+      rankdir="TD";
+      node [shape=record];
+      root [label="<name> root | <kind> NODE_TRANSLATION_UNIT|<children> children"];
+      main [label="<name> main | <kind> DECL_FUNCTION| <children> children | {<decl> decl | {sym} |{<symtype> type | <funbody> body | <funcparameters> parameters | builtin_function}}"];
+      compound [label="<name> compound| <kind> STMT_COMPOUND | <children> children"];
+      variable [label="<name> variable| <kind> DECL_VARIABLE | <children> children |{<decl> decl|{sym}|{<symtype> type | <funbody> body | <funcparameters> parameters}}"];
+      i2f[label="<name> intToFloat | <kind> EXPR_FUNCTION_CALL | <children> children |{<expr> expr | {operation | {union u |{var_ref | {fun|{<funcsym> sym|parameters}} | alloca | switch_case}}}}"];
+      constant [label="<name> constant | <kind> EXPR_CONSTANT | <children> children | {<expr> expr | {operation | {union u | {value}}}}"];
+      builtin_i2f[label="<name> intBitsToFloat|  {<type> sym | builtin_function=EXPR_OP_FUN_INTBITSTO_FLOAT} | parameters| {type | basic_type=TYPE_FLOAT}"];
+      i2f:funcsym -> builtin_i2f:name;
+      i2f:children->constant:name;
+      root:children -> main:name;
+      main:children -> compound:name;
+      compound:children -> variable:name;
+      variable:children -> i2f:name;
+  }
+#+END_SRC
+
+#+RESULTS:
+[[file:./glsl-compiler/standard_ast.png]]
