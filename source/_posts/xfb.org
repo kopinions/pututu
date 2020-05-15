@@ -1,0 +1,410 @@
+#+TITLE:  OpenGL TransformFeedback 案例和实现考量
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
+#+DATE: <2019-11-09 10:40:20>
+#+LAYOUT: post
+#+EXCERPT: xfb 的全称是 Transform Feedback. Transform Feedback是Shader Model 4.0 带来的一个新特性，与其他特性不同的是，它带来了OpenGL/OpenGL ES渲染管线的改变。
+#+DESCRIPTION: xfb 的全称是 Transform Feedback. Transform Feedback是Shader Model 4.0 带来的一个新特性，与其他特性不同的是，它带来了OpenGL/OpenGL ES渲染管线的改变。
+#+TAGS: OpenGL, Graphics
+#+CATEGORIES: Graphics,OpenGL
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     tex:imagemagick
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+BIND: org-preview-latex-image-directory "./xfb"
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+LATEX_HEADER: \usepackage{tikz}
+#+LATEX_HEADER: \usepackage{xeCJK}
+#+LATEX_HEADER: \setCJKmainfont{SimSun}
+
+** xfb 是什么  
+[[file:.//xfb/pipeline.png][现代渲染管线]]
+
+xfb 的全称是 Transform Feedback. Transform Feedback是Shader Model 4.0带来的一个新特性，与其他特性不同的是，它带来了OpenGL/OpenGL ES渲染管线的改变。上图是 OpenGL core 4.3 规范
+中定义的渲染管线。可以在上面的渲染管线中可以看出，在光栅化之前，顶点会进行一个专门的操作 Transform Feedback. 在光栅化之前，所有对顶点进行的操作，
+在 OpenGL 中都称之为 Transform. 这也是 Transform Feedback 中 Transform 的由来。 所谓 Feedback 即反馈，可以看到 Transform Feeback 会将所有进行变换的顶点反馈（Feedback）到
+专用的 Transform Feedback 缓冲区中。应用程序，或者 Vertex shader 可以使用这些已经进行过变换的顶点继续进行后续的绘制工作。
+Transform Feedback能够很好地应用在在粒子系统中，在OpenGL ES中，每个粒子都可能是一个GL_Point，在GPU中就是一个顶点。如果没有Transform Feedback，在每一帧的绘制中，
+开发者可能需要为粒子准备不同的VBO，来描述粒子的变换，而VBO从客户端上传到服务器端需要消耗很大的时间。随着Transform feedback的到来，我们可以一次性的把顶点数据变换好然后输出到Transform Feedback缓存中，
+然后这个缓存就可以给后面的很多帧使用。这种2-pass的绘制解决方案能极大地提高应用程序的3D图形的效率。
+
+** xfb 如何使用
+   xfb 的使用主要分为几个重要的阶段
+   1. 准备 xfb Buffer
+   #+BEGIN_SRC c :eval never :exports code
+     GLuint xfbbuffer;
+     GLfloat data[3] = {1.0f, 2.0f, 3.0f};
+     // 生成 xfb buffer 对象的唯一标识
+     glGenBuffers(1, &xfbbuffer);
+     // 创建 xfbbuffer 对应的缓冲区 
+     glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, xfbbuffer);
+     // 创建 buffer 存储对象，并使用 data 进行初始化
+     glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, sizeof(data), NULL, GL_STATIC_READ);
+   #+END_SRC
+
+   2. 准备 xfb Object
+   #+BEGIN_SRC c :eval never :exports code
+     GLuint xfbname;
+     // 生成 xfb 对象的唯一标识
+     glGenTransformFeedbacks(1, &xfbname);
+     // 创建或者初始化 xfb 对象
+     glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, xfbname);
+     // 因为 xfb 的机制允许有多个 buffer 存在，所以这里我们只使用第一个 buffer, 所以我们将 xfbbuffer 绑定到 xfb 缓冲区数组的第一个绑定点。
+     glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, xfbbuffer);
+   #+END_SRC
+
+   3. 开启 xfb 绘制
+   #+BEGIN_SRC c :eval never :exports code
+     glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, xfbname);
+     glBeginTransformFeedback(GL_POINTS);
+     glDrawArrays(GL_POINTS, 0, 3);
+     glEndTransformFeedbak();
+   #+END_SRC
+
+   4. 获取 xfb buffer
+   #+BEGIN_SRC c :eval never :exports code
+     GLfloat buf[3];
+     glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(buf), fb);
+   #+END_SRC
+
+
+
+** xfb 用户态驱动层如何实现
+
+   用户态驱动主要完成信息的收集以及下发工作。所以用户态主要完成的就是在 xfb 使用过程中调用 API 的实现，以及 API 涉及的信息的收集以及整理的工作。
+
+   1. glBindBuffer 处理 GL_TRANSFORM_FEEDBACK_BUFFER 的绑定
+   #+BEGIN_SRC c :eval never :exports code
+     _mesa_BindBuffer(GLenum target, GLuint buffer) {
+       switch(target) {
+	 case GL_TRANSFORM_FEEDBACK_BUFFER:
+	   if (!_mesa_validate_buffer_range_xfb(ctx,
+						ctx->TransformFeedback.CurrentObject,
+						index, bufObj, offset, size,
+						false))
+	     return;
+
+	   _mesa_bind_buffer_range_xfb(ctx, ctx->TransformFeedback.CurrentObject,
+				       index, bufObj, offset, size);}
+     }
+   #+END_SRC
+
+   2. glGenTransformFeedbacks 生成 xfb 的唯一标识
+   #+BEGIN_SRC c :eval never :exports code
+     void GLAPIENTRY
+     _mesa_GenTransformFeedbacks(GLsizei n, GLuint *names)
+     {
+	GET_CURRENT_CONTEXT(ctx);
+
+	/* GenTransformFeedbacks should just reserve the object names that a
+	 ,* subsequent call to BindTransformFeedback should actively create. For
+	 ,* the sake of simplicity, we reserve the names and create the objects
+	 ,* straight away.
+	 ,*/
+
+	create_transform_feedbacks(ctx, n, names, false);
+     }
+   #+END_SRC
+
+   3. glBindTransformFeedback 绑定当前操作 xfb 对象
+   #+BEGIN_SRC c :eval never :exports code
+     void GLAPIENTRY
+     _mesa_BindTransformFeedback(GLenum target, GLuint name)
+     {
+       GET_CURRENT_CONTEXT(ctx);
+
+       if (target != GL_TRANSFORM_FEEDBACK) {
+	 _mesa_error(ctx, GL_INVALID_ENUM, "glBindTransformFeedback(target)");
+	 return;
+       }
+
+       if (_mesa_is_xfb_active_and_unpaused(ctx)) {
+	 _mesa_error(ctx, GL_INVALID_OPERATION,
+		     "glBindTransformFeedback(transform is active, or not paused)");
+	 return;
+       }
+
+       bind_transform_feedback(ctx, name, false);
+     }
+
+   #+END_SRC
+
+   4. glBindBufferBase 处理 GL_TRANSFORM_FEEDBACK_BUFFER 的绑定
+
+   #+BEGIN_SRC c :eval never :exports code
+     void GLAPIENTRY
+     _mesa_BindBufferBase(GLenum target, GLuint index, GLuint buffer)
+     {
+
+	switch (target) {
+	case GL_TRANSFORM_FEEDBACK_BUFFER:
+	   _mesa_bind_buffer_base_transform_feedback(ctx,
+						     ctx->TransformFeedback.CurrentObject,
+						     index, bufObj, false);
+	   return;
+	default:
+	   _mesa_error(ctx, GL_INVALID_ENUM, "glBindBufferBase(target)");
+	   return;
+	}
+     }
+   #+END_SRC
+   5. glBeginTransformFeedback & glEndTransformFeedback
+   #+BEGIN_SRC c :eval never :exports code
+     void GLAPIENTRY
+     _mesa_BeginTransformFeedback(GLenum mode)
+     {
+       GET_CURRENT_CONTEXT(ctx);
+       begin_transform_feedback(ctx, mode, false);
+     }
+
+     static ALWAYS_INLINE void
+     begin_transform_feedback(struct gl_context *ctx, GLenum mode, bool no_error)
+     {
+       struct gl_transform_feedback_object *obj;
+       struct gl_transform_feedback_info *info = NULL;
+       struct gl_program *source;
+       GLuint i;
+       unsigned vertices_per_prim;
+
+       obj = ctx->TransformFeedback.CurrentObject;
+
+       /* Figure out what pipeline stage is the source of data for transform
+	,* feedback.
+	,*/
+       source = get_xfb_source(ctx);
+       if (!no_error && source == NULL) {
+	 _mesa_error(ctx, GL_INVALID_OPERATION,
+		     "glBeginTransformFeedback(no program active)");
+	 return;
+       }
+
+       info = source->sh.LinkedTransformFeedback;
+
+       if (!no_error && info->NumOutputs == 0) {
+	 _mesa_error(ctx, GL_INVALID_OPERATION,
+		     "glBeginTransformFeedback(no varyings to record)");
+	 return;
+       }
+
+       switch (mode) {
+	 case GL_POINTS:
+	   vertices_per_prim = 1;
+	   break;
+	 case GL_LINES:
+	   vertices_per_prim = 2;
+	   break;
+	 case GL_TRIANGLES:
+	   vertices_per_prim = 3;
+	   break;
+	 default:
+	   if (!no_error) {
+	     _mesa_error(ctx, GL_INVALID_ENUM, "glBeginTransformFeedback(mode)");
+	     return;
+	   } else {
+	     /* Stop compiler warnings */
+	     unreachable("Error in API use when using KHR_no_error");
+	   }
+       }
+
+       if (!no_error) {
+	 if (obj->Active) {
+	   _mesa_error(ctx, GL_INVALID_OPERATION,
+		       "glBeginTransformFeedback(already active)");
+	   return;
+	 }
+
+	 for (i = 0; i < ctx->Const.MaxTransformFeedbackBuffers; i++) {
+	   if ((info->ActiveBuffers >> i) & 1) {
+	     if (obj->BufferNames[i] == 0) {
+	       _mesa_error(ctx, GL_INVALID_OPERATION,
+			   "glBeginTransformFeedback(binding point %d does not "
+			   "have a buffer object bound)", i);
+	       return;
+	     }
+	   }
+	 }
+       }
+
+       FLUSH_VERTICES(ctx, 0);
+       ctx->NewDriverState |= ctx->DriverFlags.NewTransformFeedback;
+
+       obj->Active = GL_TRUE;
+       ctx->TransformFeedback.Mode = mode;
+
+       compute_transform_feedback_buffer_sizes(obj);
+
+       if (_mesa_is_gles3(ctx)) {
+	 /* In GLES3, we are required to track the usage of the transform
+	  ,* feedback buffer and report INVALID_OPERATION if a draw call tries to
+	  ,* exceed it.  So compute the maximum number of vertices that we can
+	  ,* write without overflowing any of the buffers currently being used for
+	  ,* feedback.
+	  ,*/
+	 unsigned max_vertices
+	     = _mesa_compute_max_transform_feedback_vertices(ctx, obj, info);
+	 obj->GlesRemainingPrims = max_vertices / vertices_per_prim;
+       }
+
+       if (obj->program != source) {
+	 ctx->NewDriverState |= ctx->DriverFlags.NewTransformFeedbackProg;
+	 _mesa_reference_program_(ctx, &obj->program, source);
+	 obj->program = source;
+       }
+
+       assert(ctx->Driver.BeginTransformFeedback);
+       ctx->Driver.BeginTransformFeedback(ctx, mode, obj);
+     }
+
+     static void
+     end_transform_feedback(struct gl_context *ctx,
+			    struct gl_transform_feedback_object *obj)
+     {
+	FLUSH_VERTICES(ctx, 0);
+	ctx->NewDriverState |= ctx->DriverFlags.NewTransformFeedback;
+
+	assert(ctx->Driver.EndTransformFeedback);
+	ctx->Driver.EndTransformFeedback(ctx, obj);
+
+	_mesa_reference_program_(ctx, &obj->program, NULL);
+	ctx->TransformFeedback.CurrentObject->Active = GL_FALSE;
+	ctx->TransformFeedback.CurrentObject->Paused = GL_FALSE;
+	ctx->TransformFeedback.CurrentObject->EndedAnytime = GL_TRUE;
+     }
+
+     void GLAPIENTRY
+     _mesa_EndTransformFeedback(void)
+     {
+	struct gl_transform_feedback_object *obj;
+	GET_CURRENT_CONTEXT(ctx);
+
+	obj = ctx->TransformFeedback.CurrentObject;
+
+	if (!obj->Active) {
+	   _mesa_error(ctx, GL_INVALID_OPERATION,
+		       "glEndTransformFeedback(not active)");
+	   return;
+	}
+
+	end_transform_feedback(ctx, obj);
+     }
+
+   #+END_SRC
+   6. glDraw* 相关函数进行修改
+   主要的内容就在第 70 行的 st_transform_feedback_draw_init
+   #+BEGIN_SRC c :eval never :exports code
+     static void
+     st_draw_vbo(struct gl_context *ctx,
+		 const struct _mesa_prim *prims,
+		 GLuint nr_prims,
+		 const struct _mesa_index_buffer *ib,
+		 GLboolean index_bounds_valid,
+		 GLuint min_index,
+		 GLuint max_index,
+		 GLuint num_instances,
+		 GLuint base_instance,
+		 struct gl_transform_feedback_object *tfb_vertcount,
+		 unsigned stream)
+     {
+       struct st_context *st = st_context(ctx);
+       struct pipe_draw_info info;
+       unsigned i;
+       unsigned start = 0;
+
+       prepare_draw(st, ctx);
+
+       /* Initialize pipe_draw_info. */
+       info.primitive_restart = false;
+       info.vertices_per_patch = ctx->TessCtrlProgram.patch_vertices;
+       info.indirect = NULL;
+       info.count_from_stream_output = NULL;
+       info.restart_index = 0;
+       info.start_instance = base_instance;
+       info.instance_count = num_instances;
+
+       if (ib) {
+	 struct gl_buffer_object *bufobj = ib->obj;
+
+	 /* Get index bounds for user buffers. */
+	 if (!index_bounds_valid && st->draw_needs_minmax_index) {
+	   vbo_get_minmax_indices(ctx, prims, ib, &min_index, &max_index,
+				  nr_prims);
+	 }
+
+	 info.index_size = 1 << ib->index_size_shift;
+	 info.min_index = min_index;
+	 info.max_index = max_index;
+
+	 if (bufobj) {
+	   /* indices are in a real VBO */
+	   info.has_user_indices = false;
+	   info.index.resource = st_buffer_object(bufobj)->buffer;
+
+	   /* Return if the bound element array buffer doesn't have any backing
+	    ,* storage. (nothing to do)
+	    ,*/
+	   if (!info.index.resource)
+	     return;
+
+	   start = pointer_to_offset(ib->ptr) >> ib->index_size_shift;
+	 } else {
+	   /* indices are in user space memory */
+	   info.has_user_indices = true;
+	   info.index.user = ib->ptr;
+	 }
+
+	 setup_primitive_restart(ctx, &info);
+       }
+       else {
+	 info.index_size = 0;
+	 info.has_user_indices = false;
+
+	 /* Transform feedback drawing is always non-indexed. */
+	 /* Set info.count_from_stream_output. */
+	 if (tfb_vertcount) {
+	   if (!st_transform_feedback_draw_init(tfb_vertcount, stream, &info))
+	     return;
+	 }
+       }
+
+       /* do actual drawing */
+       for (i = 0; i < nr_prims; i++) {
+	 info.count = prims[i].count;
+
+	 /* Skip no-op draw calls. */
+	 if (!info.count && !tfb_vertcount)
+	   continue;
+
+	 info.mode = translate_prim(ctx, prims[i].mode);
+	 info.start = start + prims[i].start;
+	 info.index_bias = prims[i].basevertex;
+	 info.drawid = prims[i].draw_id;
+	 if (!ib) {
+	   info.min_index = info.start;
+	   info.max_index = info.start + info.count - 1;
+	 }
+
+	 if (ST_DEBUG & DEBUG_DRAW) {
+	   debug_printf("st/draw: mode %s  start %u  count %u  index_size %d\n",
+			u_prim_name(info.mode),
+			info.start,
+			info.count,
+			info.index_size);
+	 }
+
+	 /* Don't call u_trim_pipe_prim. Drivers should do it if they need it. */
+	 cso_draw_vbo(st->cso_context, &info);
+       }
+     }
+     bool
+     st_transform_feedback_draw_init(struct gl_transform_feedback_object *obj,
+				     unsigned stream, struct pipe_draw_info *out)
+     {
+       struct st_transform_feedback_object *sobj =
+	   st_transform_feedback_object(obj);
+
+       out->count_from_stream_output = sobj->draw_count[stream];
+       return out->count_from_stream_output != NULL;
+     }
+   #+END_SRC
+   
