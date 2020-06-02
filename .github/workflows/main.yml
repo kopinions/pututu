@@ -33,13 +33,12 @@ jobs:
         git submodule update --init
     - name: install
       run: |
-        npm install hexo-cli -g
         npm install
     - name: hexo
       run: |
         source ~/.nix-profile/etc/profile.d/nix.sh
-        hexo clean
-        hexo generate --debug
+        npm run clean
+        npm run build
     - name: after
       run: |
-        hexo deploy
+        npm run deploy
