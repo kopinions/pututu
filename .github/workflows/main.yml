@@ -36,7 +36,6 @@ jobs:
         npm install
     - name: hexo
       run: |
-        source ~/.nix-profile/etc/profile.d/nix.sh
         npm run clean
         npm run build
     - name: after
