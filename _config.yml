@@ -95,8 +95,12 @@ ignore:
 deploy:
   type: git
   repo:
-    github: git@github.com:kopinions/pututu.git
+    github: https://github.com/kopinions/pututu.git
   branch: gh-pages
+  token: $DEPLOY_TOKEN
+  name: neo
+  email: sjkyspa@gmail.com
+  message: update
 
 org:
   debug: true
