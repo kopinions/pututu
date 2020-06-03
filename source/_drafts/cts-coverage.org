@@ -1,0 +1,247 @@
+#+TITLE: cts 的测试范围
+#+DATE: <2019-06-03 Wed 08:52>
+#+UPDATED: <2020-06-03 Wed 09:00>
+#+CATEGORIES: opengl, cts
+#+TAGS: opengl, cts
+#+LAYOUT: post
+***  cts runner 实现原理
+    - --type 指定测试的范围（gl43,es32,es3等）
+    - 如果是 gl 系列的 api, 比如 gl43, 则会在 glcts/data/mustpuss/gl/khronos_mustpass/4.6.0.x/ 中寻找对应的满足条件的测试集（glcTestRunner.cpp:454）
+    - 同时还会在 glcts/data/mustpuss/gl/khronos_mustpass_noctx/4.6.0.x/ 中查找
+    - 查找的方式为： glcKhronosMustpassGlNoContext.hpp/glcKhronosMustpassGl.hpp 中定义了参数，如下所示
+      #+BEGIN_SRC cpp :eval never :exports code
+	const char* mustpassDir = "gl_cts/data/mustpass/gl/khronos_mustpass_noctx/4.6.1.x/";
+
+	static const RunParams khronos_mustpass_gl_nocontext_first_cfg[] =
+	  {
+	   { glu::ApiType::core(3, 0), "khr-master", DE_NULL, "unspecified", 1, DE_NULL, 64, 64 },
+	   { glu::ApiType::core(4, 0), "khr-master", DE_NULL, "unspecified", 1, DE_NULL, 64, 64 },
+	   { glu::ApiType::core(4, 3), "khr-master", DE_NULL, "unspecified", 1, DE_NULL, 64, 64 },
+	   { glu::ApiType::core(4, 5), "khr-master", DE_NULL, "unspecified", 1, DE_NULL, 64, 64 },
+	  };
+      #+END_SRC
+
+      如果当前指定的 api 的 version, 支持 cfg 中定义的 version , 则将 mustpassDir+"khr-master"+".txt" 中的参数作为运行一次
+      deqp 的参数，运行相应的测试，启动 api version 是否支持 cfg 的函数如下所示
+      #+BEGIN_SRC cpp :eval never :exports code
+	  bool contextSupports (ContextType ctxType, ApiType requiredApiType)
+	  {
+		  // \todo [2014-10-06 pyry] Check exact forward-compatible restrictions.
+		  const bool forwardCompatible = (ctxType.getFlags() & CONTEXT_FORWARD_COMPATIBLE) != 0;
+
+		  if (isContextTypeES(ctxType))
+		  {
+			  DE_ASSERT(!forwardCompatible);
+			  return requiredApiType.getProfile() == PROFILE_ES &&
+				     versionGreaterOrEqual(ctxType.getAPI(), requiredApiType);
+		  }
+		  else if (isContextTypeGLCore(ctxType))
+		  {
+			  if (forwardCompatible)
+				  return ctxType.getAPI() == requiredApiType;
+			  else
+				  return requiredApiType.getProfile() == PROFILE_CORE &&
+					     versionGreaterOrEqual(ctxType.getAPI(), requiredApiType);
+		  }
+		  else if (isContextTypeGLCompatibility(ctxType))
+		  {
+			  DE_ASSERT(!forwardCompatible);
+			  return (requiredApiType.getProfile() == PROFILE_CORE || requiredApiType.getProfile() == PROFILE_COMPATIBILITY) &&
+				     versionGreaterOrEqual(ctxType.getAPI(), requiredApiType);
+		  }
+		  else
+		  {
+			  DE_ASSERT(false);
+			  return false;
+		  }
+	  }
+
+      #+END_SRC
+    - 生成的log 命名格式为： config-${apiname}-${configname}-cfg-${configIdx}-run-${runId}-width-${width}-height-${height} 其中 apiname 示例为 gl43, configname 取值为 master,hkr-master
+      configIdx 为 eglGetConfigs 中遍历的序号，cts 会对 EGL 支持的所有的 config 都会进行相应的测试。runId 为 测试的在 glcKhronosMustpassGlNoContext.hpp/glcKhronosMustpassGl.hpp 中 cfg 中定义的序号。比如 gl43 在 glcKhronosMustpassGlNoContext.hpp
+      中的序号是3, 所以运行 gl43 的时候， runId 就是3. width 和 height 分别是 cfg 中指定的宽高。
+    - cts runner 会生成一系列的 glcts 运行命令，从而运行 glcts 进行对应的实际测试
+      #+BEGIN_SRC shell :eval never :exports code
+	glcts --deqp-caselist-file=glcts/data/mustpass/gl/khronos_mustpass/4.6.0.x/gl43-master.txt \
+	      --deqp-screen-rotation=unspecified --deqp-surface-width=64 --deqp-surface-height=64 \
+	      --deqp-watchdot=disable --deqp-base-seed=1 --deqp-surface-type=window --deqp-gl-config-id=1 \
+	      --deqp-gl-context-type=egl --deqp-log-filename=config-gl43-master-cfg-1-run-12-width-64-seed-1.qpa \
+	      --deqp-log-images=disable --deqp-log-shader-sources=disable
+      #+END_SRC
+    
+
+*** glcts 的实现原理
+    glcts 从命令行参数中接收接收接收需要运行的测试用例列表，并进行解析。
+    
+    对于 OpenGL 的某一个版本来说（gl43）， 这种情况下 CTS 会使用如下两个列表进行测试用例的初始化
+    1. khronos_mustpass_noctx/4.6.0.x/gl43-khr-master.txt
+    2. khronos_mustpass/4.6.0.x/gl43-master.txt
+
+    上述文件的示例如下：
+    #+BEGIN_SRC text :eval never :exports code
+      KHR-GL43.info.vendor
+      KHR-GL43.info.renderer
+      KHR-GL43.info.version
+      KHR-GL43.info.shading_language_version
+      KHR-GL43.info.extensions
+      KHR-GL43.info.render_target
+      KHR-GL43.clip_distance.coverage
+    #+END_SRC
+
+    glcts 会包含所有的测试用例，并且在启动的时候会将所有的测试用例以树的形式添加到存储中。示例代码如下
+    #+BEGIN_SRC cpp :eval never :exports code
+      class RegisterCTSPackages
+      {
+      public:
+	      RegisterCTSPackages(void)
+	      {
+		      glcts::registerPackages();
+	      }
+      };
+
+      RegisterCTSPackages g_registerCTS;
+    #+END_SRC
+
+    其中 glcts::registerPackages 的实现如下
+    #+BEGIN_SRC cpp :eval never :exports code
+      void registerPackages(void)
+      {
+	tcu::TestPackageRegistry* registry = tcu::TestPackageRegistry::getSingleton();
+
+	registry->registerPackage("CTS-Configs", createConfigPackage);
+
+      #if DE_OS != DE_OS_ANDROID
+	registry->registerPackage("dEQP-EGL", createdEQPEGLPackage);
+      #endif
+	registry->registerPackage("KHR-GLES2", createES2Package);
+      #if DE_OS != DE_OS_ANDROID
+	registry->registerPackage("dEQP-GLES2", createdEQPES2Package);
+      #endif
+
+      #if defined(DEQP_GTF_AVAILABLE)
+	registry->registerPackage("GTF-GLES2", createES2GTFPackage);
+      #endif
+
+	registry->registerPackage("KHR-GLES3", createES30Package);
+      #if DE_OS != DE_OS_ANDROID
+	registry->registerPackage("dEQP-GLES3", createdEQPES30Package);
+      #endif
+
+      #if defined(DEQP_GTF_AVAILABLE)
+	registry->registerPackage("GTF-GLES3", createES30GTFPackage);
+      #endif
+
+      #if DE_OS != DE_OS_ANDROID
+	registry->registerPackage("dEQP-GLES31", createdEQPES31Package);
+      #endif
+	registry->registerPackage("KHR-GLES31", createES31Package);
+	registry->registerPackage("KHR-GLESEXT", createESEXTPackage);
+
+      #if defined(DEQP_GTF_AVAILABLE)
+	registry->registerPackage("GTF-GLES31", createES31GTFPackage);
+      #endif
+
+	registry->registerPackage("KHR-GLES32", createES32Package);
+
+	registry->registerPackage("KHR-NoContext", createNoDefaultCustomContextPackage);
+
+	registry->registerPackage("KHR-Single-GL45", createSingleConfigGL45TestPackage);
+	registry->registerPackage("KHR-Single-GL46", createSingleConfigGL46TestPackage);
+	registry->registerPackage("KHR-Single-GLES32", createSingleConfigES32TestPackage);
+
+	registry->registerPackage("KHR-GL30", createGL30Package);
+	registry->registerPackage("KHR-GL31", createGL31Package);
+	registry->registerPackage("KHR-GL32", createGL32Package);
+	registry->registerPackage("KHR-GL33", createGL33Package);
+
+	registry->registerPackage("KHR-GL40", createGL40Package);
+	registry->registerPackage("KHR-GL41", createGL41Package);
+	registry->registerPackage("KHR-GL42", createGL42Package);
+	registry->registerPackage("KHR-GL43", createGL43Package);
+	registry->registerPackage("KHR-GL44", createGL44Package);
+	registry->registerPackage("KHR-GL45", createGL45Package);
+	registry->registerPackage("KHR-GL46", createGL46Package);
+
+      #if defined(DEQP_GTF_AVAILABLE)
+	registry->registerPackage("GTF-GL30", createGL30GTFPackage);
+	registry->registerPackage("GTF-GL31", createGL31GTFPackage);
+	registry->registerPackage("GTF-GL32", createGL32GTFPackage);
+	registry->registerPackage("GTF-GL33", createGL33GTFPackage);
+
+	registry->registerPackage("GTF-GL40", createGL40GTFPackage);
+	registry->registerPackage("GTF-GL41", createGL41GTFPackage);
+	registry->registerPackage("GTF-GL42", createGL42GTFPackage);
+	registry->registerPackage("GTF-GL43", createGL43GTFPackage);
+	registry->registerPackage("GTF-GL44", createGL44GTFPackage);
+	registry->registerPackage("GTF-GL45", createGL45GTFPackage);
+	registry->registerPackage("GTF-GL46", createGL46GTFPackage);
+      #endif
+      }
+    #+END_SRC
+
+    通过这段代码，将 cts 所有支持的测试全部加载到内存，通过上面的列表进行过滤，运行的测试就是这些注册过的测试。
+    
+
+    
+*** CTS 测试的覆盖范围
+    
+**** gl43
+     1. info(glGetString)
+     2. clip_distance api 覆盖测试(glGetIntegerv, glEnable/glDisable CLIP_DISTANCE0-7, clip_distance in vertex/fragment shader, clip distance from vert->frag)
+     3. clip_distance 功能测试
+     4. clip_distance negative 边界测试
+     5. shader 数据隐式转换（int->uint, unit-int....）
+     6. shader 函数重载
+     7. 重载shader 浮点编码， xxxBitsToFloat
+     8. glsl 无透视投影下的功能测试，包括shader,texture,vertexattrib array, program, buffer 相关的测试
+     9. xfb
+     10. 常见问题测试：
+	 1. 变量不能更改测试
+	 2. vert 无效输入测试
+	 3. 保留关键字测试
+     11. shader 数组构造函数测试（bvec, fvec）
+     12. vert,frag 之间数据共享 array 数据index 测试
+     13. shader 深度测试，写入，读取，uniform 写入等等
+     14. shader 中各种循环测试，for, while, dowhile
+     15. shader preprocessor 测试
+     16. shader struct local/uniform(uniform struct)
+     17. shader switch case test
+     18. shader uniform block
+     19. shader integer mix(mix function for vectors)
+     20. shader 边界测试（初始化，常量）
+     21. eline_statistics_query_tests_ARB
+     22. cull_distance, api 覆盖，功能测试，边界测试
+     23. texutre_swizzle api 覆盖， 功能测试， 边界测试
+     24. draw_elements_base_vertext(gl*Draw*Elements*BaseVertex), 包括边界测试，功能测试
+     25. shader fp64 相关测试，操作符，函数，uniform 等等
+     26. texture_gather
+     27. draw_indirect (glDrawArraysIndirect, glDrawElementsIndirect....)
+     28. draw count 系列边界测试
+     29. clip control arb
+     30. shader_subroutine
+     31. texture_barrier
+     32. exposted_extensions
+     33. ertex_attrib_64bit,
+     34. viewport array
+     35. map_buffer
+     36. shader atomic_counters
+     37. shader image load store
+     38. shading_languate_420pack (GL_ARB_shading_language_420pack)
+     39. texture view
+     40. arrays of arrays (测试基础数据类型的多层 array , int a[2][2][2][2], 总共可以达到8 层，以及 shader 中 array 的各种使用情况做验证)
+     41. copy image
+     42. draw_indirect 43 (computer shader 相关)
+     43. program interface query
+     44. computer shader
+     45. buffer access 和边界测试
+     46. shader storage buffer object(storage 相关 api, shader 语法检查)
+     47. vertex_attrib binding
+     48. shader image size
+     49. explicit uniform location
+     50. blend(preprocessor, equation...)
+     51. shader bitfield operation , 所有的 var.xy== operation(a.xy, b.xy) 之类的，operation 有 ldexp, frexp, uaddCarry 之类的
+     52. stencil& texturing 功能测试
+     53. spare_buffer tests(GL_ARB_sparse_buffer)
+     54. sparse_texture_tests (GL_ARB_spare_texture)
+     55. shader_ballot_tests , shader ballot arb test
+     56. const_expression 测试， 各种 const 的定义，返回等测试
