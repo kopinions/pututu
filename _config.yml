@@ -100,7 +100,7 @@ deploy:
     token: $DEPLOY_TOKEN
   name: neo
   email: sjkyspa@gmail.com
-  message: update
+  message: "feat: update posts"
 
 org:
   debug: true
