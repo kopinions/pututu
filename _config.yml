@@ -94,7 +94,7 @@ ignore:
 
 deploy:
   type: git
-  repo: https://github.com/kopinions/pututu.git
+  repo: git@github.com:kopinions/pututu.git
   branch: gh-pages
   token: $DEPLOY_TOKEN
   name: neo
