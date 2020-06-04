@@ -1,0 +1,9 @@
+#+BEGIN_HTML
+<a href="https://github.com/kopinions/pututu/actions?query=workflow%3Ahtmlize">
+  <img src="https://github.com/kopinions/pututu/workflows/htmlize/badge.svg"/>
+</a>
+#+END_HTML
+* pututu
+pututu is a tool use to transfer information to others.
+
+
