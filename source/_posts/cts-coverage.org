@@ -1,5 +1,5 @@
 #+TITLE: cts 的测试范围
-#+DATE: <2019-06-03 Wed 08:52>
+#+DATE: <2020-06-03 Wed 08:52>
 #+UPDATED: <2020-06-03 Wed 09:00>
 #+CATEGORIES: opengl, cts
 #+TAGS: opengl, cts
