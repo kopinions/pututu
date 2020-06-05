@@ -1,4 +1,0 @@
-#!/bin/sh -e
-sudo apt update -y
-sudo apt install -y graphviz openssl fonts-wqy-microhei imagemagick texlive-latex-extra
-sudo snap install emacs --classic
