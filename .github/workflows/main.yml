@@ -8,29 +8,25 @@ on:
 
 jobs:
   build:
-    env:
-      EMACS_CI: emacs-26-3
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
-    - name: Install Nix
-      uses: cachix/install-nix-action@v9
     - name: setup
       run: |
-        .github/scripts/setup
-        git submodule update --init
+        sudo apt update -y
+        sudo apt install -y graphviz openssl fonts-wqy-microhei imagemagick texlive-latex-extra
+        sudo snap install emacs --classic
     - name: install
       run: |
+        git submodule update --init
         npm install
     - name: Setup tmate session
       uses: mxschmitt/action-tmate@v2
-    - name: hexo
+    - name: genreate
       run: |
         npm run clean
         npm run build
-    - name: after
+    - name: deploy
       env:
         DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
       run: |
