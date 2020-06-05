@@ -1,9 +1,21 @@
 #+TITLE: cts 的测试范围
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
 #+DATE: <2020-06-03 Wed 08:52>
-#+UPDATED: <2020-06-03 Wed 09:00>
+#+UPDATED: <2020-06-05 Wed 09:00>
 #+CATEGORIES: opengl, cts
 #+TAGS: opengl, cts
 #+LAYOUT: post
+#+EXCERPT:  CTS 作为 KHRONOS 组织检查一个实现是否满足 OpenGL 规范的测试集，他到底测试了什么？
+#+DESCRIPTION: CTS 作为 KHRONOS 组织检查一个实现是否满足 OpenGL 规范的测试集，他到底测试了什么？
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+LATEX_HEADER: \usepackage{xeCJK}
+#+LATEX_HEADER: \setCJKmainfont{Heiti SC}
+
 ***  cts runner 实现原理
     - --type 指定测试的范围（gl43,es32,es3等）
     - 如果是 gl 系列的 api, 比如 gl43, 则会在 glcts/data/mustpuss/gl/khronos_mustpass/4.6.0.x/ 中寻找对应的满足条件的测试集（glcTestRunner.cpp:454）
