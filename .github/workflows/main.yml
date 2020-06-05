@@ -14,14 +14,15 @@ jobs:
     - name: setup
       run: |
         sudo apt update -y
-        sudo apt install -y graphviz openssl fonts-wqy-microhei imagemagick texlive-full
+        sudo apt install -y graphviz openssl fonts-wqy-microhei imagemagick texlive
+        sudo sed -i 's/\(<policy domain="coder" rights=\)"none" \(pattern="PDF" \/>\)/\1"read|write"\2/g' /etc/ImageMagick-6/policy.xml
         sudo snap install emacs --classic
     - name: install
       run: |
         git submodule update --init
         npm install
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v2
+    #- name: Setup tmate session
+    #  uses: mxschmitt/action-tmate@v2
     - name: genreate
       run: |
         npm run clean
