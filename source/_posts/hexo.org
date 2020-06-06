@@ -1,38 +1,122 @@
 #+TITLE: 用 orgmode 在 hexo 上写博客
-#+DATE: <2019-03-05 Sun 08:52>
-#+UPDATED: <2020-02-28 Fri 09:00>
+#+DATE: <2020-03-05 Thr 08:52>
+#+UPDATED: <2020-06-06 Sat 09:00>
 #+CATEGORIES: org-mode, hexo
 #+TAGS: hexo, org-mode
 #+LAYOUT: post
+#+EXCERPT:  hexo 是一个快速，简介且高效的博客框架，Hexo 默认的使用 Markdown 解析文章。作为 Markdown 界鼻祖的 Orgmode, 如何能和 hexo 集合并且生成相应的静态网站，本文将为你揭晓。
+#+DESCRIPTION: hexo 是一个快速，简介且高效的博客框架，Hexo 默认的使用 Markdown 解析文章。作为 Markdown 界鼻祖的 Orgmode, 如何能和 hexo 集合并且生成相应的静态网站，本文将为你揭晓。
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+
 *** hexo 安装和初始化
-#+BEGIN_SRC shell :exports code :eval never
+    #+BEGIN_SRC shell :exports code :eval never
 npm install -g hexo-cli
 hexo init kopinions
-#+END_SRC
+    #+END_SRC
 *** org-mode 配置
 ***** 安装 org-mode 的 render
 
-#+BEGIN_SRC shell :exports code :eval never
-npm install https://github.com/sjkyspa/hexo-renderer-org --save
-#+END_SRC
+      #+BEGIN_SRC shell :exports code :eval never
+	npm install https://github.com/sjkyspa/hexo-renderer-org --save
+      #+END_SRC
 ***** 配置 org-mode 的配置
-#+BEGIN_SRC yaml :exports code :eval never
-  org:
-    emacs: /Applications/Emacs.app/Contents/MacOS/Emacs
-    emacsclient: /Applications/Emacs.app/Contents/MacOS/bin/emacsclient
-    theme: tango-dark
-    highlight:
-      enable: true
-    org:
-      htmlize: false
-    common: |
-      #+OPTIONS: html-postamble:nil
-#+END_SRC
+      #+BEGIN_SRC yaml :exports code :eval never
+	org:
+	  emacs: /Applications/Emacs.app/Contents/MacOS/Emacs
+	  emacsclient: /Applications/Emacs.app/Contents/MacOS/bin/emacsclient
+	  theme: tango-dark
+	  highlight:
+	    enable: true
+	  org:
+	    htmlize: false
+	  common: |
+	    ,#+OPTIONS: html-postamble:nil
+      #+END_SRC
 *** hexo 启动
-#+BEGIN_SRC shell :eval never :exports code
-hexo serve
-#+END_SRC
+    #+BEGIN_SRC shell :eval never :exports code
+      hexo serve
+    #+END_SRC
 *** hexo-render-org 支持的行为
 **** plantuml
+     plantuml 是一个支持快速绘制的开源项目。PlantUML 定义了一套领域专用语言实现 UML 关系图的描述。并且基于 Graphviz 图形渲染库进行 UML
+     图的生成。在 hexo-render-org 中，自动会下载并且安装 plantuml.jar 并使用 emacs 进行 PlantUML 描述的渲染。
+
+     比如我们有如下的代码片段
+     #+BEGIN_SRC text :exports both :file ./hexo/plantuml.png
+       ,#+BEGIN_SRC plantuml :exports results :file ./xxx.png
+        Bob -> Alice: hello alice
+       ,#+END_SRC
+     #+END_SRC
+
+     #+BEGIN_SRC plantuml :exports results :file ./hexo/plantuml.png
+       Bob -> Alice: hello alice
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:./hexo/plantuml.png]]
+
+
+     就可以生成如下图所示的图片文件。具体的 plantuml 的使用方式可以参考 [[https://plantuml.com/zh/sequence-diagram][PlantUML 中文]].
+     [[https://github.com/kopinions/hexo-renderer-orgmode.git][hexo renderer orgmode]] 直接成支持如上 ditaa 的写法，并且会自动生成相应的图片。
+
 **** ditaa
+     Ditaa 是一个支持通文本描述生成通用图标的开源项目。示例如下：
+     #+BEGIN_SRC text :eval never :exports code
+       ,#+BEGIN_SRC ditaa :exports results :file ./hexo/ditaa.png
+	 +--------+   +-------+    +-------+
+	 |        | --+ ditaa +--> |       |
+	 |  Text  |   +-------+    |diagram|
+	 |Document|   |!magic!|    |       |
+	 |     {d}|   |       |    |       |
+	 +---+----+   +-------+    +-------+
+	 :                         ^
+	 |       Lots of work      |
+	 +-------------------------+
+       ,#+END_SRC
+     #+END_SRC
+
+     通过上面的描述，我们可以生成如下图所示的图片。[[https://github.com/kopinions/hexo-renderer-orgmode.git][hexo renderer orgmode]] 直接成支持如上 ditaa 的写法，并且会自动生成相应的图片。
+     #+BEGIN_SRC ditaa :exports results :file ./hexo/ditaa.png
+       +--------+   +-------+    +-------+
+       |        | --+ ditaa +--> |       |
+       |  Text  |   +-------+    |diagram|
+       |Document|   |!magic!|    |       |
+       |     {d}|   |       |    |       |
+       +---+----+   +-------+    +-------+
+       :                         ^
+       |       Lots of work      |
+       +-------------------------+
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:./hexo/ditaa.png]]
+
 **** dot
+     
+     DOT 是一种用于描述文本图形的语言。DOT 提供了一种简单的方式来描述图形，并且这种描述可以被人和计算机所理解。
+     DOT 语言通常是具有 .gv 和 .dot 的文件扩展名。 emacs 通过 Graphviz 来支持 DOT 的渲染。
+     Graphviz 是 AT&T 实验室启动的开源工具包，可以用于绘制 DOT 语言描述的图形。
+     
+     dot 示例如下：
+     #+BEGIN_SRC text :eval never :exports code
+       ,#+BEGIN_SRC dot :exports results :file ./hexo/dot.png
+	 graph demo {
+	     "Browser" -- {"Chrome", "Fiefox", "Safari", "..."}
+	 }
+       ,#+END_SRC;
+     #+END_SRC
+
+     上面的代码生成的图形如下所示。[[https://github.com/kopinions/hexo-renderer-orgmode.git][hexo renderer orgmode]] 直接成支持如上 dot 的写法，并且会自动生成相应的图片。
+     #+BEGIN_SRC dot :exports results :file ./hexo/dot.png
+       graph demo {
+	   "Browser" -- {"Chrome", "Fiefox", "Safari", "..."}
+       }
+     #+END_SRC
+
+     #+RESULTS:
+     [[file:./hexo/dot.png]]
+
