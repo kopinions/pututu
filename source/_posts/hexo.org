@@ -46,7 +46,7 @@ hexo init kopinions
      图的生成。在 hexo-render-org 中，自动会下载并且安装 plantuml.jar 并使用 emacs 进行 PlantUML 描述的渲染。
 
      比如我们有如下的代码片段
-     #+BEGIN_SRC text :exports both :file ./hexo/plantuml.png
+     #+BEGIN_SRC text :exports code :eval never
        ,#+BEGIN_SRC plantuml :exports results :file ./xxx.png
         Bob -> Alice: hello alice
        ,#+END_SRC
@@ -66,7 +66,7 @@ hexo init kopinions
 **** ditaa
      Ditaa 是一个支持通文本描述生成通用图标的开源项目。示例如下：
      #+BEGIN_SRC text :eval never :exports code
-       ,#+BEGIN_SRC ditaa :exports results :file ./hexo/ditaa.png
+       ,#+BEGIN_SRC ditaa :exports results :file ./hexo/ditaa.png 
 	 +--------+   +-------+    +-------+
 	 |        | --+ ditaa +--> |       |
 	 |  Text  |   +-------+    |diagram|
