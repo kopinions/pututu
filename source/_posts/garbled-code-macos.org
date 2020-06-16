@@ -1,0 +1,59 @@
+#+TITLE:  macos 蓝牙键盘切换乱码问题记录
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
+#+DATE: <2020-06-16 18:40:20>
+#+LAYOUT: post
+#+EXCERPT: 如果你使用苹果的笔记本，并且你也使用蓝牙键盘，那么你一定遇到过一个莫名奇妙的问题－－－当蓝牙键盘重新链接的时候，会随机的出现键盘输入乱码的问题。
+#+DESCRIPTION: 如果你使用苹果的笔记本，并且你也使用蓝牙键盘，那么你一定遇到过一个莫名奇妙的问题－－－当蓝牙键盘重新链接的时候，会随机的出现键盘输入乱码的问题。
+#+TAGS: macos, bluetooth
+#+CATEGORIES: macos, bluetooth
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     tex:imagemagick
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+*** 问题
+    如果你使用苹果的笔记本，并且你也使用蓝牙键盘，那么你一定遇到过一个莫名奇妙的问题－－－当蓝牙键盘重新链接的时候，会随机的出现键盘输入乱码的问题。这种乱码问题，除非重新启动系统，
+    否则就连苹果自带的键盘都会输入乱码。这个问题困扰了我很久。但是一直没有找到问题的根源。突然有一天，我连续两次遇到了乱码。这么随机的事件，连续两次出现，这种概率基本上相当于买彩票中奖了。
+    所以我对我所有到操作进行了反向推演。在推演的过程中一个小的细节引起了我的注意。我在两次乱码出现的场景中，都长时间的按到了 Option 键（因为我的 Option + Space 键是 Alfred 的快捷键）。
+    而 Option 键正好是 macos 键盘内置输入一些 unicode 的控制键。那么此时问题就来了，为什么我在切换键盘的过程中，我按了 Option 键，并且也释放了 Option 键，但是表现出来的行为确实 Option 键一直被
+    按住的行为呢？
+
+*** 原因
+    经过一番重复的试错，终于发现，所有的一些都是在蓝牙键盘链接过程中，我的大猪蹄子长时间按了 Option 键， 并且我更改了蓝牙键盘的键位映射（Alt-Cmd, Cmd-Alt）。这两个看似完全不相干的事件导致了最终随机的会出现
+    Option 键被一直按住，导致乱码的情况。具体出现过程如下所示
+
+    #+BEGIN_SRC plantuml :exports results :file ./garbled-code-macos/flow.png
+      @startuml
+      actor 我 as monster
+      actor 键盘 as kbd
+      actor 笔记本 as mac
+
+      kbd -> mac : 我要开始连接啦
+      mac -> kbd : 连接吧
+      monster -> kbd: 按住 Option 键
+      kbd -> mac : "我一直按着 Option(alt) 键"
+      mac -> kbd : "我已经将你的键位映射为 Option -> Cmd, Cmd -> Options"
+      kbd -> mac : "等下, 我还没有释放 Option 键, 帮我释放下 Option 键."
+      mac -> kbd : 你刚才释放的是 Cmd 吧. Option 键你不是一直按着呢吗?
+      kbd -> mac : 锟斤拷,烫烫烫
+      mac -> kbd : 你在讲什么?
+      @enduml
+    #+END_SRC
+
+    #+RESULTS:
+    [[file:./garbled-code-macos/flow.png]]
+
+
+    如上图所示，如果在蓝牙键盘链接过程中，如果你更改过键位映射，在键位映射配置完成前按了 Alt 键， 并且一直按到键位配置完成，这种情况下，你的键盘基本上就是乱码的状态。那么既然我们知道问题在哪里，我们有没有办法进行修复呢？
+    目前我找到了一个比较好的方法是：粘滞键（Sticky Keys）
+
+    在 Settings -> Accessibility -> Keyboard -> Hardware 下选中 Enable Sticky Keys, 并且点击 Options ,选中 Press the shift key five times to toggle the sticky key. 
+
+    这样当你遇到键盘乱码的时候，就可以通过按 5 次 shift 键启动粘滞键，然后再按 5 次 shift 关闭粘滞键的操作，相当于重置一次 Alt, Options, Cmd 的状态。这样就可以解决键盘乱码的问题。
+
+*** 思考
+    所有的随机问题，看上去是随机出现的，其实很多时候只不过是我们没有找到问题触发的条件。有时候莫名的触发了问题的启动条件，但是我们没有努力去找到每次环境和操作的共性，所以往往没有办法解决这类随机问题。所以
+    很多时候，能把一个随机问题变成一个必现问题，基本上也就离解决问题不远了。Fighting
+    
