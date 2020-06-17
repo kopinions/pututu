@@ -1,7 +1,8 @@
 #+TITLE:  OpenGL TransformFeedback 案例和实现考量
 #+AUTHOR: 孙建康（rising.lambda）
 #+EMAIL:  rising.lambda@gmail.com
-#+DATE: <2019-11-09 10:40:20>
+#+DATE: <2020-04-10 Fri 10:40:20>
+#+UPDATED: <2020-06-17 Wed 09:00>
 #+LAYOUT: post
 #+EXCERPT: xfb 的全称是 Transform Feedback. Transform Feedback是Shader Model 4.0 带来的一个新特性，与其他特性不同的是，它带来了OpenGL/OpenGL ES渲染管线的改变。
 #+DESCRIPTION: xfb 的全称是 Transform Feedback. Transform Feedback是Shader Model 4.0 带来的一个新特性，与其他特性不同的是，它带来了OpenGL/OpenGL ES渲染管线的改变。
@@ -19,54 +20,97 @@
 #+LATEX_HEADER: \setCJKmainfont{SimSun}
 
 ** xfb 是什么  
-[[file:.//xfb/pipeline.png][现代渲染管线]]
+   [[file:.//xfb/pipeline.png][现代渲染管线]]
 
-xfb 的全称是 Transform Feedback. Transform Feedback是Shader Model 4.0带来的一个新特性，与其他特性不同的是，它带来了OpenGL/OpenGL ES渲染管线的改变。上图是 OpenGL core 4.3 规范
-中定义的渲染管线。可以在上面的渲染管线中可以看出，在光栅化之前，顶点会进行一个专门的操作 Transform Feedback. 在光栅化之前，所有对顶点进行的操作，
-在 OpenGL 中都称之为 Transform. 这也是 Transform Feedback 中 Transform 的由来。 所谓 Feedback 即反馈，可以看到 Transform Feeback 会将所有进行变换的顶点反馈（Feedback）到
-专用的 Transform Feedback 缓冲区中。应用程序，或者 Vertex shader 可以使用这些已经进行过变换的顶点继续进行后续的绘制工作。
-Transform Feedback能够很好地应用在在粒子系统中，在OpenGL ES中，每个粒子都可能是一个GL_Point，在GPU中就是一个顶点。如果没有Transform Feedback，在每一帧的绘制中，
-开发者可能需要为粒子准备不同的VBO，来描述粒子的变换，而VBO从客户端上传到服务器端需要消耗很大的时间。随着Transform feedback的到来，我们可以一次性的把顶点数据变换好然后输出到Transform Feedback缓存中，
-然后这个缓存就可以给后面的很多帧使用。这种2-pass的绘制解决方案能极大地提高应用程序的3D图形的效率。
+   xfb 的全称是 Transform Feedback. Transform Feedback是Shader Model 4.0带来的一个新特性，与其他特性不同的是，它带来了OpenGL/OpenGL ES渲染管线的改变。上图是 OpenGL core 4.3 规范
+   中定义的渲染管线。可以在上面的渲染管线中可以看出，在光栅化之前，顶点会进行一个专门的操作 Transform Feedback. 在光栅化之前，所有对顶点进行的操作，
+   在 OpenGL 中都称之为 Transform. 这也是 Transform Feedback 中 Transform 的由来。 所谓 Feedback 即反馈，可以看到 Transform Feeback 会将所有进行变换的顶点反馈（Feedback）到
+   专用的 Transform Feedback 缓冲区中。应用程序，或者 Vertex shader 可以使用这些已经进行过变换的顶点继续进行后续的绘制工作。
+   Transform Feedback能够很好地应用在在粒子系统中，在OpenGL ES中，每个粒子都可能是一个GL_Point，在GPU中就是一个顶点。如果没有Transform Feedback，在每一帧的绘制中，
+   开发者可能需要为粒子准备不同的VBO，来描述粒子的变换，而VBO从客户端上传到服务器端需要消耗很大的时间。随着Transform feedback的到来，我们可以一次性的把顶点数据变换好然后输出到Transform Feedback缓存中，
+   然后这个缓存就可以给后面的很多帧使用。这种2-pass的绘制解决方案能极大地提高应用程序的3D图形的效率。
 
 ** xfb 如何使用
    xfb 的使用主要分为几个重要的阶段
    1. 准备 xfb Buffer
-   #+BEGIN_SRC c :eval never :exports code
-     GLuint xfbbuffer;
-     GLfloat data[3] = {1.0f, 2.0f, 3.0f};
-     // 生成 xfb buffer 对象的唯一标识
-     glGenBuffers(1, &xfbbuffer);
-     // 创建 xfbbuffer 对应的缓冲区 
-     glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, xfbbuffer);
-     // 创建 buffer 存储对象，并使用 data 进行初始化
-     glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, sizeof(data), NULL, GL_STATIC_READ);
-   #+END_SRC
-
+      #+BEGIN_SRC c :eval never :exports code
+	GLuint xfbbuffer;
+	GLfloat data[3] = {1.0f, 2.0f, 3.0f};
+	// 生成 xfb buffer 对象的唯一标识
+	glGenBuffers(1, &xfbbuffer);
+	// 创建 xfbbuffer 对应的缓冲区 
+	glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFER, xfbbuffer);
+	// 创建 buffer 存储对象，并使用 data 进行初始化
+	glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, sizeof(data), NULL, GL_STATIC_READ);
+      #+END_SRC
    2. 准备 xfb Object
-   #+BEGIN_SRC c :eval never :exports code
-     GLuint xfbname;
-     // 生成 xfb 对象的唯一标识
-     glGenTransformFeedbacks(1, &xfbname);
-     // 创建或者初始化 xfb 对象
-     glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, xfbname);
-     // 因为 xfb 的机制允许有多个 buffer 存在，所以这里我们只使用第一个 buffer, 所以我们将 xfbbuffer 绑定到 xfb 缓冲区数组的第一个绑定点。
-     glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, xfbbuffer);
-   #+END_SRC
+      #+BEGIN_SRC c :eval never :exports code
+	GLuint xfbname;
+	// 生成 xfb 对象的唯一标识
+	glGenTransformFeedbacks(1, &xfbname);
+	// 创建或者初始化 xfb 对象
+	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, xfbname);
+	// 因为 xfb 的机制允许有多个 buffer 存在，所以这里我们只使用第一个 buffer, 所以我们将 xfbbuffer 绑定到 xfb 缓冲区数组的第一个绑定点。
+	glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, xfbbuffer);
+      #+END_SRC
+   3. 准备 shader
+      vertex shader
+      #+BEGIN_SRC c :eval never :exports code
+	#version 430
+	out vec2 max_value;
+	void main() {
+	  max_value = vec2(1.0, 1.0);
+	  gl_Position = vec4(1.0, 1.0, 0.0, 0.0);
+	}
+      #+END_SRC
+      fragment shader
+      #+BEGIN_SRC c :eval never :exports code
+	#version 430
+	out vec4 color;
+	void main() {
+	  color = vec4(1.0, 0.0, 0.0, 0.0);
+	}
+      #+END_SRC
 
-   3. 开启 xfb 绘制
-   #+BEGIN_SRC c :eval never :exports code
-     glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, xfbname);
-     glBeginTransformFeedback(GL_POINTS);
-     glDrawArrays(GL_POINTS, 0, 3);
-     glEndTransformFeedbak();
-   #+END_SRC
+   4. 编译 & 链接
+      #+BEGIN_SRC c :eval never :exports code
+	GLuint v = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vert);
+	glCompileShader(v);
 
-   4. 获取 xfb buffer
-   #+BEGIN_SRC c :eval never :exports code
-     GLfloat buf[3];
-     glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(buf), fb);
-   #+END_SRC
+	GLuint f = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(vert);
+	glCompileShader(v);
+
+	GLunit p = glCreateProgram();
+	glAttachShader(p, v);
+	glAttachShader(p, f);
+
+	glLinkProgram(p);
+      #+END_SRC
+
+   5. 配置 xfb 变量
+      #+BEGIN_SRC c :eval never :exports code
+	char * varyings[] = {
+			    "max_value"
+		    
+	};
+	glTransformFeedbackVarings(p, sizeof(varyings)/sizeof(varyings[0]), varyings, GL_INTERLEAVED_ATTRIBS);
+      #+END_SRC
+
+   6. 开启 xfb 绘制
+      #+BEGIN_SRC c :eval never :exports code
+	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, xfbname);
+	glBeginTransformFeedback(GL_POINTS);
+	glDrawArrays(GL_POINTS, 0, 3);
+	glEndTransformFeedbak();
+      #+END_SRC
+
+   7. 获取 xfb buffer
+      #+BEGIN_SRC c :eval never :exports code
+	GLfloat buf[3];
+	glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(buf), fb);
+      #+END_SRC
 
 
 
