@@ -2,7 +2,7 @@
 #+AUTHOR: 孙建康（rising.lambda）
 #+EMAIL:  rising.lambda@gmail.com
 #+DATE: <2020-04-10 Fri 10:40:20>
-#+UPDATED: <2020-06-17 Wed 09:00>
+#+UPDATED: <2020-06-29 Wed 09:00>
 #+LAYOUT: post
 #+EXCERPT: xfb 的全称是 Transform Feedback. Transform Feedback是Shader Model 4.0 带来的一个新特性，与其他特性不同的是，它带来了OpenGL/OpenGL ES渲染管线的改变。
 #+DESCRIPTION: xfb 的全称是 Transform Feedback. Transform Feedback是Shader Model 4.0 带来的一个新特性，与其他特性不同的是，它带来了OpenGL/OpenGL ES渲染管线的改变。
@@ -20,7 +20,7 @@
 #+LATEX_HEADER: \setCJKmainfont{SimSun}
 
 ** xfb 是什么  
-   [[file:.//xfb/pipeline.png][现代渲染管线]]
+   [[file:.//./xfb/pipeline.png][现代渲染管线]]
 
    xfb 的全称是 Transform Feedback. Transform Feedback是Shader Model 4.0带来的一个新特性，与其他特性不同的是，它带来了OpenGL/OpenGL ES渲染管线的改变。上图是 OpenGL core 4.3 规范
    中定义的渲染管线。可以在上面的渲染管线中可以看出，在光栅化之前，顶点会进行一个专门的操作 Transform Feedback. 在光栅化之前，所有对顶点进行的操作，
@@ -119,221 +119,221 @@
    用户态驱动主要完成信息的收集以及下发工作。所以用户态主要完成的就是在 xfb 使用过程中调用 API 的实现，以及 API 涉及的信息的收集以及整理的工作。
 
    1. glBindBuffer 处理 GL_TRANSFORM_FEEDBACK_BUFFER 的绑定
-   #+BEGIN_SRC c :eval never :exports code
-     _mesa_BindBuffer(GLenum target, GLuint buffer) {
-       switch(target) {
-	 case GL_TRANSFORM_FEEDBACK_BUFFER:
-	   if (!_mesa_validate_buffer_range_xfb(ctx,
-						ctx->TransformFeedback.CurrentObject,
-						index, bufObj, offset, size,
-						false))
-	     return;
+      #+BEGIN_SRC c :eval never :exports code
+	_mesa_BindBuffer(GLenum target, GLuint buffer) {
+	  switch(target) {
+	    case GL_TRANSFORM_FEEDBACK_BUFFER:
+	      if (!_mesa_validate_buffer_range_xfb(ctx,
+						   ctx->TransformFeedback.CurrentObject,
+						   index, bufObj, offset, size,
+						   false))
+		return;
 
-	   _mesa_bind_buffer_range_xfb(ctx, ctx->TransformFeedback.CurrentObject,
-				       index, bufObj, offset, size);}
-     }
-   #+END_SRC
+	      _mesa_bind_buffer_range_xfb(ctx, ctx->TransformFeedback.CurrentObject,
+					  index, bufObj, offset, size);}
+	}
+      #+END_SRC
 
    2. glGenTransformFeedbacks 生成 xfb 的唯一标识
-   #+BEGIN_SRC c :eval never :exports code
-     void GLAPIENTRY
-     _mesa_GenTransformFeedbacks(GLsizei n, GLuint *names)
-     {
-	GET_CURRENT_CONTEXT(ctx);
+      #+BEGIN_SRC c :eval never :exports code
+       void GLAPIENTRY
+       _mesa_GenTransformFeedbacks(GLsizei n, GLuint *names)
+       {
+	  GET_CURRENT_CONTEXT(ctx);
 
-	/* GenTransformFeedbacks should just reserve the object names that a
-	 ,* subsequent call to BindTransformFeedback should actively create. For
-	 ,* the sake of simplicity, we reserve the names and create the objects
-	 ,* straight away.
-	 ,*/
+	  /* GenTransformFeedbacks should just reserve the object names that a
+	   ,* subsequent call to BindTransformFeedback should actively create. For
+	   ,* the sake of simplicity, we reserve the names and create the objects
+	   ,* straight away.
+	   ,*/
 
-	create_transform_feedbacks(ctx, n, names, false);
-     }
-   #+END_SRC
+	  create_transform_feedbacks(ctx, n, names, false);
+       }
+      #+END_SRC
 
    3. glBindTransformFeedback 绑定当前操作 xfb 对象
-   #+BEGIN_SRC c :eval never :exports code
-     void GLAPIENTRY
-     _mesa_BindTransformFeedback(GLenum target, GLuint name)
-     {
-       GET_CURRENT_CONTEXT(ctx);
+      #+BEGIN_SRC c :eval never :exports code
+	void GLAPIENTRY
+	_mesa_BindTransformFeedback(GLenum target, GLuint name)
+	{
+	  GET_CURRENT_CONTEXT(ctx);
 
-       if (target != GL_TRANSFORM_FEEDBACK) {
-	 _mesa_error(ctx, GL_INVALID_ENUM, "glBindTransformFeedback(target)");
-	 return;
-       }
+	  if (target != GL_TRANSFORM_FEEDBACK) {
+	    _mesa_error(ctx, GL_INVALID_ENUM, "glBindTransformFeedback(target)");
+	    return;
+	  }
 
-       if (_mesa_is_xfb_active_and_unpaused(ctx)) {
-	 _mesa_error(ctx, GL_INVALID_OPERATION,
-		     "glBindTransformFeedback(transform is active, or not paused)");
-	 return;
-       }
+	  if (_mesa_is_xfb_active_and_unpaused(ctx)) {
+	    _mesa_error(ctx, GL_INVALID_OPERATION,
+			"glBindTransformFeedback(transform is active, or not paused)");
+	    return;
+	  }
 
-       bind_transform_feedback(ctx, name, false);
-     }
+	  bind_transform_feedback(ctx, name, false);
+	}
 
-   #+END_SRC
+      #+END_SRC
 
    4. glBindBufferBase 处理 GL_TRANSFORM_FEEDBACK_BUFFER 的绑定
+      #+BEGIN_SRC c :eval never :exports code
+	void GLAPIENTRY
+	_mesa_BindBufferBase(GLenum target, GLuint index, GLuint buffer)
+	{
 
-   #+BEGIN_SRC c :eval never :exports code
-     void GLAPIENTRY
-     _mesa_BindBufferBase(GLenum target, GLuint index, GLuint buffer)
-     {
-
-	switch (target) {
-	case GL_TRANSFORM_FEEDBACK_BUFFER:
-	   _mesa_bind_buffer_base_transform_feedback(ctx,
-						     ctx->TransformFeedback.CurrentObject,
-						     index, bufObj, false);
-	   return;
-	default:
-	   _mesa_error(ctx, GL_INVALID_ENUM, "glBindBufferBase(target)");
-	   return;
+	   switch (target) {
+	   case GL_TRANSFORM_FEEDBACK_BUFFER:
+	      _mesa_bind_buffer_base_transform_feedback(ctx,
+							ctx->TransformFeedback.CurrentObject,
+							index, bufObj, false);
+	      return;
+	   default:
+	      _mesa_error(ctx, GL_INVALID_ENUM, "glBindBufferBase(target)");
+	      return;
+	   }
 	}
-     }
-   #+END_SRC
+      #+END_SRC
+
    5. glBeginTransformFeedback & glEndTransformFeedback
-   #+BEGIN_SRC c :eval never :exports code
-     void GLAPIENTRY
-     _mesa_BeginTransformFeedback(GLenum mode)
-     {
-       GET_CURRENT_CONTEXT(ctx);
-       begin_transform_feedback(ctx, mode, false);
-     }
-
-     static ALWAYS_INLINE void
-     begin_transform_feedback(struct gl_context *ctx, GLenum mode, bool no_error)
-     {
-       struct gl_transform_feedback_object *obj;
-       struct gl_transform_feedback_info *info = NULL;
-       struct gl_program *source;
-       GLuint i;
-       unsigned vertices_per_prim;
-
-       obj = ctx->TransformFeedback.CurrentObject;
-
-       /* Figure out what pipeline stage is the source of data for transform
-	,* feedback.
-	,*/
-       source = get_xfb_source(ctx);
-       if (!no_error && source == NULL) {
-	 _mesa_error(ctx, GL_INVALID_OPERATION,
-		     "glBeginTransformFeedback(no program active)");
-	 return;
-       }
-
-       info = source->sh.LinkedTransformFeedback;
-
-       if (!no_error && info->NumOutputs == 0) {
-	 _mesa_error(ctx, GL_INVALID_OPERATION,
-		     "glBeginTransformFeedback(no varyings to record)");
-	 return;
-       }
-
-       switch (mode) {
-	 case GL_POINTS:
-	   vertices_per_prim = 1;
-	   break;
-	 case GL_LINES:
-	   vertices_per_prim = 2;
-	   break;
-	 case GL_TRIANGLES:
-	   vertices_per_prim = 3;
-	   break;
-	 default:
-	   if (!no_error) {
-	     _mesa_error(ctx, GL_INVALID_ENUM, "glBeginTransformFeedback(mode)");
-	     return;
-	   } else {
-	     /* Stop compiler warnings */
-	     unreachable("Error in API use when using KHR_no_error");
-	   }
-       }
-
-       if (!no_error) {
-	 if (obj->Active) {
-	   _mesa_error(ctx, GL_INVALID_OPERATION,
-		       "glBeginTransformFeedback(already active)");
-	   return;
-	 }
-
-	 for (i = 0; i < ctx->Const.MaxTransformFeedbackBuffers; i++) {
-	   if ((info->ActiveBuffers >> i) & 1) {
-	     if (obj->BufferNames[i] == 0) {
-	       _mesa_error(ctx, GL_INVALID_OPERATION,
-			   "glBeginTransformFeedback(binding point %d does not "
-			   "have a buffer object bound)", i);
-	       return;
-	     }
-	   }
-	 }
-       }
-
-       FLUSH_VERTICES(ctx, 0);
-       ctx->NewDriverState |= ctx->DriverFlags.NewTransformFeedback;
-
-       obj->Active = GL_TRUE;
-       ctx->TransformFeedback.Mode = mode;
-
-       compute_transform_feedback_buffer_sizes(obj);
-
-       if (_mesa_is_gles3(ctx)) {
-	 /* In GLES3, we are required to track the usage of the transform
-	  ,* feedback buffer and report INVALID_OPERATION if a draw call tries to
-	  ,* exceed it.  So compute the maximum number of vertices that we can
-	  ,* write without overflowing any of the buffers currently being used for
-	  ,* feedback.
-	  ,*/
-	 unsigned max_vertices
-	     = _mesa_compute_max_transform_feedback_vertices(ctx, obj, info);
-	 obj->GlesRemainingPrims = max_vertices / vertices_per_prim;
-       }
-
-       if (obj->program != source) {
-	 ctx->NewDriverState |= ctx->DriverFlags.NewTransformFeedbackProg;
-	 _mesa_reference_program_(ctx, &obj->program, source);
-	 obj->program = source;
-       }
-
-       assert(ctx->Driver.BeginTransformFeedback);
-       ctx->Driver.BeginTransformFeedback(ctx, mode, obj);
-     }
-
-     static void
-     end_transform_feedback(struct gl_context *ctx,
-			    struct gl_transform_feedback_object *obj)
-     {
-	FLUSH_VERTICES(ctx, 0);
-	ctx->NewDriverState |= ctx->DriverFlags.NewTransformFeedback;
-
-	assert(ctx->Driver.EndTransformFeedback);
-	ctx->Driver.EndTransformFeedback(ctx, obj);
-
-	_mesa_reference_program_(ctx, &obj->program, NULL);
-	ctx->TransformFeedback.CurrentObject->Active = GL_FALSE;
-	ctx->TransformFeedback.CurrentObject->Paused = GL_FALSE;
-	ctx->TransformFeedback.CurrentObject->EndedAnytime = GL_TRUE;
-     }
-
-     void GLAPIENTRY
-     _mesa_EndTransformFeedback(void)
-     {
-	struct gl_transform_feedback_object *obj;
-	GET_CURRENT_CONTEXT(ctx);
-
-	obj = ctx->TransformFeedback.CurrentObject;
-
-	if (!obj->Active) {
-	   _mesa_error(ctx, GL_INVALID_OPERATION,
-		       "glEndTransformFeedback(not active)");
-	   return;
+      #+BEGIN_SRC c :eval never :exports code
+	void GLAPIENTRY
+	_mesa_BeginTransformFeedback(GLenum mode)
+	{
+	  GET_CURRENT_CONTEXT(ctx);
+	  begin_transform_feedback(ctx, mode, false);
 	}
 
-	end_transform_feedback(ctx, obj);
-     }
+	static ALWAYS_INLINE void
+	begin_transform_feedback(struct gl_context *ctx, GLenum mode, bool no_error)
+	{
+	  struct gl_transform_feedback_object *obj;
+	  struct gl_transform_feedback_info *info = NULL;
+	  struct gl_program *source;
+	  GLuint i;
+	  unsigned vertices_per_prim;
 
-   #+END_SRC
+	  obj = ctx->TransformFeedback.CurrentObject;
+
+	  /* Figure out what pipeline stage is the source of data for transform
+	   ,* feedback.
+	   ,*/
+	  source = get_xfb_source(ctx);
+	  if (!no_error && source == NULL) {
+	    _mesa_error(ctx, GL_INVALID_OPERATION,
+			"glBeginTransformFeedback(no program active)");
+	    return;
+	  }
+
+	  info = source->sh.LinkedTransformFeedback;
+
+	  if (!no_error && info->NumOutputs == 0) {
+	    _mesa_error(ctx, GL_INVALID_OPERATION,
+			"glBeginTransformFeedback(no varyings to record)");
+	    return;
+	  }
+
+	  switch (mode) {
+	    case GL_POINTS:
+	      vertices_per_prim = 1;
+	      break;
+	    case GL_LINES:
+	      vertices_per_prim = 2;
+	      break;
+	    case GL_TRIANGLES:
+	      vertices_per_prim = 3;
+	      break;
+	    default:
+	      if (!no_error) {
+		_mesa_error(ctx, GL_INVALID_ENUM, "glBeginTransformFeedback(mode)");
+		return;
+	      } else {
+		/* Stop compiler warnings */
+		unreachable("Error in API use when using KHR_no_error");
+	      }
+	  }
+
+	  if (!no_error) {
+	    if (obj->Active) {
+	      _mesa_error(ctx, GL_INVALID_OPERATION,
+			  "glBeginTransformFeedback(already active)");
+	      return;
+	    }
+
+	    for (i = 0; i < ctx->Const.MaxTransformFeedbackBuffers; i++) {
+	      if ((info->ActiveBuffers >> i) & 1) {
+		if (obj->BufferNames[i] == 0) {
+		  _mesa_error(ctx, GL_INVALID_OPERATION,
+			      "glBeginTransformFeedback(binding point %d does not "
+			      "have a buffer object bound)", i);
+		  return;
+		}
+	      }
+	    }
+	  }
+
+	  FLUSH_VERTICES(ctx, 0);
+	  ctx->NewDriverState |= ctx->DriverFlags.NewTransformFeedback;
+
+	  obj->Active = GL_TRUE;
+	  ctx->TransformFeedback.Mode = mode;
+
+	  compute_transform_feedback_buffer_sizes(obj);
+
+	  if (_mesa_is_gles3(ctx)) {
+	    /* In GLES3, we are required to track the usage of the transform
+	     ,* feedback buffer and report INVALID_OPERATION if a draw call tries to
+	     ,* exceed it.  So compute the maximum number of vertices that we can
+	     ,* write without overflowing any of the buffers currently being used for
+	     ,* feedback.
+	     ,*/
+	    unsigned max_vertices
+		= _mesa_compute_max_transform_feedback_vertices(ctx, obj, info);
+	    obj->GlesRemainingPrims = max_vertices / vertices_per_prim;
+	  }
+
+	  if (obj->program != source) {
+	    ctx->NewDriverState |= ctx->DriverFlags.NewTransformFeedbackProg;
+	    _mesa_reference_program_(ctx, &obj->program, source);
+	    obj->program = source;
+	  }
+
+	  assert(ctx->Driver.BeginTransformFeedback);
+	  ctx->Driver.BeginTransformFeedback(ctx, mode, obj);
+	}
+
+	static void
+	end_transform_feedback(struct gl_context *ctx,
+			       struct gl_transform_feedback_object *obj)
+	{
+	   FLUSH_VERTICES(ctx, 0);
+	   ctx->NewDriverState |= ctx->DriverFlags.NewTransformFeedback;
+
+	   assert(ctx->Driver.EndTransformFeedback);
+	   ctx->Driver.EndTransformFeedback(ctx, obj);
+
+	   _mesa_reference_program_(ctx, &obj->program, NULL);
+	   ctx->TransformFeedback.CurrentObject->Active = GL_FALSE;
+	   ctx->TransformFeedback.CurrentObject->Paused = GL_FALSE;
+	   ctx->TransformFeedback.CurrentObject->EndedAnytime = GL_TRUE;
+	}
+
+	void GLAPIENTRY
+	_mesa_EndTransformFeedback(void)
+	{
+	   struct gl_transform_feedback_object *obj;
+	   GET_CURRENT_CONTEXT(ctx);
+
+	   obj = ctx->TransformFeedback.CurrentObject;
+
+	   if (!obj->Active) {
+	      _mesa_error(ctx, GL_INVALID_OPERATION,
+			  "glEndTransformFeedback(not active)");
+	      return;
+	   }
+
+	   end_transform_feedback(ctx, obj);
+	}
+
+      #+END_SRC
    6. glDraw* 相关函数进行修改
    主要的内容就在第 70 行的 st_transform_feedback_draw_init
    #+BEGIN_SRC c :eval never :exports code
