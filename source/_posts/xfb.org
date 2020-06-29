@@ -20,7 +20,7 @@
 #+LATEX_HEADER: \setCJKmainfont{SimSun}
 
 ** xfb 是什么  
-   [[file:.//./xfb/pipeline.png][现代渲染管线]]
+   [[file:xfb/pipeline.png][现代渲染管线]]
 
    xfb 的全称是 Transform Feedback. Transform Feedback是Shader Model 4.0带来的一个新特性，与其他特性不同的是，它带来了OpenGL/OpenGL ES渲染管线的改变。上图是 OpenGL core 4.3 规范
    中定义的渲染管线。可以在上面的渲染管线中可以看出，在光栅化之前，顶点会进行一个专门的操作 Transform Feedback. 在光栅化之前，所有对顶点进行的操作，
