@@ -131,7 +131,7 @@ theme_config:
       - /about
     -
       - Github
-      - https://github.com/sjkyspa
+      - https://github.com/kopinions
       - true
   footer:
     # 默认显示 @2019 • author，设置为 false 可隐藏。
@@ -148,7 +148,7 @@ theme_config:
       - mailto:rising.lambda@gmail.com
     -
       - github 
-      - https://github.com/sjkyspa
+      - https://github.com/kopinions
     -
       - facebook
       - https://www.facebook.com/rising.lambda
