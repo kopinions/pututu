@@ -72,7 +72,16 @@
 	}
       #+END_SRC
 
-   4. 编译 & 链接
+   4. 配置 xfb 变量
+      #+BEGIN_SRC c :eval never :exports code
+	char * varyings[] = {
+			    "max_value"
+		    
+	};
+	glTransformFeedbackVarings(p, sizeof(varyings)/sizeof(varyings[0]), varyings, GL_INTERLEAVED_ATTRIBS);
+      #+END_SRC
+
+   5. 编译 & 链接
       #+BEGIN_SRC c :eval never :exports code
 	GLuint v = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vert);
@@ -89,15 +98,6 @@
 	glLinkProgram(p);
       #+END_SRC
 
-   5. 配置 xfb 变量
-      #+BEGIN_SRC c :eval never :exports code
-	char * varyings[] = {
-			    "max_value"
-		    
-	};
-	glTransformFeedbackVarings(p, sizeof(varyings)/sizeof(varyings[0]), varyings, GL_INTERLEAVED_ATTRIBS);
-      #+END_SRC
-
    6. 开启 xfb 绘制
       #+BEGIN_SRC c :eval never :exports code
 	glBindTransformFeedback(GL_TRANSFORM_FEEDBACK, xfbname);
@@ -111,8 +111,6 @@
 	GLfloat buf[3];
 	glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(buf), fb);
       #+END_SRC
-
-
 
 ** xfb 用户态驱动层如何实现
 
