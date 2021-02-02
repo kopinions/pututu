@@ -158,3 +158,9 @@ theme_config:
     -
       - linkedin
       - https://www.linkedin.com/in/%E5%AD%99%E5%BB%BA%E5%BA%B7/
+  seo:
+    # 于页面头部添加 structured data 标签，默认禁用
+    structured_data: true
+  plugins:
+    - tag: meta
+      
