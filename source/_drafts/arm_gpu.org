@@ -1,13 +1,34 @@
 ** GPU 概念
-| 缩写                          | 全称                             | 释义                                         | 其他                                                                                                                         |
-|-------------------------------+----------------------------------+----------------------------------------------+------------------------------------------------------------------------------------------------------------------------------|
-| SIMD                          | Single Instruction Multiple Data | 单指令，多数据并行计算，在一个指令周期内完成 | [[https://zhuanlan.zhihu.com/p/55327037][SIMD 简介]]                                                                         |
-| SIMD Vectorization            |                                  | 向量化计算                                   | [[https://arcb.csc.ncsu.edu/~mueller/cluster/ps3/SDK3.0/docs/accessibility/sdkpt/cbet_1simdvector.html][SIMD vectorization]] |
-|                               |                                  |                                              | [[https://zhuanlan.zhihu.com/p/72953129][为什么向量化计算这么快]]                                                            |
-| Index-driven position shading |                                  |                                              |                                                                                                                              |
-|                               |                                  |                                              |                                                                                                                              |
 
-| 缩写 | 全称               | 中文 | 详情                       | 其他 |
-|------+--------------------+------+----------------------------+------|
-| FMA  | Fused Multiply Add |      | ARM 指令集指令， a x b + c |      |
-|      |                    |      |                            |      |
+| 名称                             | 释义                                         | 其他                                                                                                                         |
+|----------------------------------+----------------------------------------------+------------------------------------------------------------------------------------------------------------------------------|
+| Single Instruction Multiple Data | 单指令，多数据并行计算，在一个指令周期内完成 | [[https://zhuanlan.zhihu.com/p/55327037][SIMD 简介]]                                                                         |
+|----------------------------------+----------------------------------------------+------------------------------------------------------------------------------------------------------------------------------|
+| SIMD Vectorization               | 向量化计算                                   | [[https://arcb.csc.ncsu.edu/~mueller/cluster/ps3/SDK3.0/docs/accessibility/sdkpt/cbet_1simdvector.html][SIMD vectorization]] |
+|                                  |                                              | [[https://zhuanlan.zhihu.com/p/72953129][为什么向量化计算这么快]]                                                            |
+|----------------------------------+----------------------------------------------+------------------------------------------------------------------------------------------------------------------------------|
+| Index-driven position shading    |                                              |                                                                                                                              |
+| Fragment Frontend                |                                              |                                                                                                                              |
+| Fragment Backend                 |                                              |                                                                                                                              |
+
+** Acronyms
+
+| 缩写    | 全称                                      | 中文       | 详情                       | 其他 |
+|---------+-------------------------------------------+------------+----------------------------+------|
+| FMA     | Fused Multiply Add                        |            | ARM 指令集指令， a * b + c |      |
+|---------+-------------------------------------------+------------+----------------------------+------|
+| tripipe | Tri pipe                                  | 三个流水线 | Arithmetic                 |      |
+|         |                                           |            | Load/store                 |      |
+|         |                                           |            | Texture                    |      |
+|---------+-------------------------------------------+------------+----------------------------+------|
+| AMBA    | Advanced Microcontroller Bus Architecture |            |                            |      |
+| AXI     | AMBA Advanced eXtensible Interface        |            |                            |      |
+| APB     | AMBA Advanced Peripherial Bus             |            |                            |      |
+| ACE     | AMBA AXI Coherency Extensions             |            |                            |      |
+| GPU     | Graphics Processing Unit                  |            |                            |      |
+| VPU     | Video Processing Unit                     |            |                            |      |
+| DPU     | Display Processing Unit                   |            |                            |      |
+| ISA     | Instruction Set Architecture              |            |                            |      |
+| SIMD    |                                           |            |                            |      |
+
+*** 未知的概念

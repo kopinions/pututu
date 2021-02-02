@@ -45,29 +45,39 @@ EFUSE: 电子熔断丝
 PSR: Program Status Register 程序状态寄存器
 
 
-| 缩写   | 全称                      | 含义                                                                         |
-|--------+---------------------------+------------------------------------------------------------------------------|
-| CDC    | Clock Domain Cross        | 跨时钟域，电路需要使用来自不同时钟域的信号，这种情况下需要进行时钟同步的处理 |
-| HSI    | High Speed Internal       |                                                                              |
-| HSE    | High Speed External       |                                                                              |
-| LSI    | Low Speed Internal        |                                                                              |
-| LSE    | Low Speed External        |                                                                              |
-| PDDS   | Power Down Deep Sleep     |                                                                              |
-| LPDS   | Low Power Deep Sleep      |                                                                              |
-| EXTI   | External Interrupt        | 外部中断，来自 GPIO                                                          |
-| UPF    | Unified Power Format      |                                                                              |
-| RCC    | Reset Clock Control       | STM32 有一个单独的寄存器用来存储这个状态                                     |
-| DFT    | Design For Test           |                                                                              |
-| DFM    | Design for Manufacture    |                                                                              |
-| TARMAC | Trace ARm ACcess          |                                                                              |
-| ISS    | Instruction Set Simulator |                                                                              |
-| ADS    | Arm Developer Suite       |                                                                              |
-| DSM    | Design Simulation Model   |                                                                              |
-| TCL    | Tool Control Language     | 工具控制语言                                                                 |
-|        |                           |                                                                              |
+| 缩写   | 全称                      | 中文     | 含义                                                                                 |
+|--------+---------------------------+----------+--------------------------------------------------------------------------------------|
+| CDC    | Clock Domain Cross        |          | 跨时钟域，电路需要使用来自不同时钟域的信号，这种情况下需要进行时钟同步的处理         |
+| HSI    | High Speed Internal       |          |                                                                                      |
+| HSE    | High Speed External       |          |                                                                                      |
+| LSI    | Low Speed Internal        |          |                                                                                      |
+| LSE    | Low Speed External        |          |                                                                                      |
+| PDDS   | Power Down Deep Sleep     |          |                                                                                      |
+| LPDS   | Low Power Deep Sleep      |          |                                                                                      |
+| EXTI   | External Interrupt        |          | 外部中断，来自 GPIO                                                                  |
+| UPF    | Unified Power Format      |          | 统一电源格式                                                                         |
+| RCC    | Reset Clock Control       |          | STM32 有一个单独的寄存器用来存储这个状态                                             |
+| DFT    | Design For Test           |          |                                                                                      |
+| DFM    | Design for Manufacture    |          |                                                                                      |
+| TARMAC | Trace ARm ACcess          |          |                                                                                      |
+| ISS    | Instruction Set Simulator |          |                                                                                      |
+| ADS    | Arm Developer Suite       |          |                                                                                      |
+| DSM    | Design Simulation Model   |          |                                                                                      |
+| TCL    | Tool Control Language     |          | 工具控制语言                                                                         |
+| NTL    | Non-Threshold Logic       |          | 非阈值逻辑，在这种仿真中，不存在 NMOS,PMOS 之类的基础器件，只有或非门作为基础器件    |
+| CG     | Clock Gating              | 时钟门控 | 是一种在同步电路中降低功耗的技术。在电路中加入控制逻辑，在不使用芯片的时候，关闭时钟 |
+| PD     | Power Domain              | 电源域   |                                                                                      |
+| PDC    | Power Domain Control      |          |                                                                                      |
 
 
+*** 常见接口
 
+**** Q-Channel
+     在 AMBA 协议里有两个低功耗接口，用于实现 power 的控制。其中之一就是 Q-Channel, 可以实现简单的 power 的控制，包括
+     上电和下电。
+**** P-Channel
+     AMBA 中另外一个低功耗接口就是 P-Channel, 可以实现复杂的 power 的控制。如全上电，半上电， 1/4 上电等等。
+     上电和下电。
 *** 常见的知识
 
 **** 晶振为什么能产生固定频率的信号
