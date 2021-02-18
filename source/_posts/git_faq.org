@@ -1,7 +1,7 @@
 #+TITLE: Git 常见问题
 #+AUTHOR: 孙建康（rising.lambda）
 #+EMAIL:  rising.lambda@gmail.com
-#+DATE: <2021-01-15>
+#+DATE: <2021-02-15>
 #+LAYOUT: post
 #+EXCERPT: 很大一块代码，如何分开添加，提交？如何随心所欲的想添加哪里就添加哪里？看完这篇文章你就知晓了。  
 #+DESCRIPTION:  很大一块代码，如何分开添加，提交？如何随心所欲的想添加哪里就添加哪里？看完这篇文章你就知晓了。
@@ -12,7 +12,7 @@
 #+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
 #+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
 #+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
-#+BIND:        org-preview-latex-image-directory ""
+#+BIND:        org-preview-latex-image-directory "git_faq"
 #+OPTIONS:     tex:imagemagick
 #+LATEX_HEADER:\usepackage{xeCJK}
 #+LATEX_HEADER:\setCJKmainfont{Heiti SC}
@@ -104,7 +104,7 @@
 	 + 到这里就结束了
 	 + 不应该出现在这里的代码，我们不应该添加
 	 # ---
-	 # To remove '-' lines, make them ' ' lines (context). "如果不想添加 删除掉的某一行，删掉 - 号"
+	 # To remove '-' lines, make them ' ' lines (context). "如果不想添加 删除掉的某一行，将 - 替换成 ' ' 空格"
 	 # To remove '+' lines, delete them.(如果不像要 + 行，直接删除)
 	 # Lines starting with # will be removed.
 	 #
