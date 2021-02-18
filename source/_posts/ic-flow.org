@@ -2,6 +2,7 @@
 #+AUTHOR: 孙建康（rising.lambda）
 #+EMAIL:  rising.lambda@gmail.com
 #+DATE: <2019-12-29 12:40:20>
+#+UPDATED: <2021-02-16 Wed 09:00>
 #+LAYOUT: post
 #+EXCERPT:  芯片设计是一个非常复杂的工程，我们的日常生活已经充满了一块一块小小的芯片，从门禁、手机、MP3、电视。一个小小的芯片上面可能就有千万或者更多个单元，它们一个个排列，相连组成一个个整体实现一个个功能。那么它们是怎样设计出来的呢？
 #+DESCRIPTION: 芯片设计是一个非常复杂的工程，我们的日常生活已经充满了一块一块小小的芯片，从门禁、手机、MP3、电视。一个小小的芯片上面可能就有千万或者更多个单元，它们一个个排列，相连组成一个个整体实现一个个功能。那么它们是怎样设计出来的呢？ 
@@ -24,23 +25,24 @@
 
 
 ** 名词缩写
-| 缩写 | 全称                                | 解释                                                                                       |
-|------+-------------------------------------+--------------------------------------------------------------------------------------------|
-| GDS  | Geometry Data Standard              | 描述集成电路伴读的一种格式，包括晶体管大小，数量，位置，连线，尺寸位置信息，是二进制文件   |
-| NOC  | Network On Chip                     | 片上互联网络                                                                               |
-| PHY  | PHYcial layer                       | 物理连接                                                                                   |
-| HDP  | High density plasma                 | 高密度等离子体（能够定制沉积和原位刻蚀形貌 ，具有最佳的硅片间厚度均匀性和间隙填充均匀性）  |
-| CIP  | Core Independent Peripherals        | Autonomous Peripherals operation, 独立于 CPU 的外设，用来减轻延迟，增加吞吐量              |
-| UMC  | United Microelectronics Corporation | 华联电子                                                                                   |
-| HBMH | High Bandwidth Memory               | 高带宽内存芯片                                                                             |
-| CP   | Chip Probe                          | 晶圆CP 测试， 常用于功能测试和性能测试中，了解芯片是否工作正常，以及筛掉晶粒中的故障晶粒。 |
-| ATE  | Auto Test Equipment                 | 自动化测试设备                                                                             |
-| DC   | Design Compiler                     | 将RTL 编译为门级电路                                                                       |
-| STA  | Static Timing Analysis              | 静态时序分析                                                                               |
-| CHI  | Coherent Hub Interface              | 高性能互联中心，用来连接高性能处理器和内存控制器                                           |
-| BGA  | Ball Grid Array                     | 球栅阵列                                                                                   |
-| PTH  | Pin Through Hole                    | 针脚封装                                                                                   |
-|      |                                     |                                                                                            |
+| 缩写 | 全称                                | 解释                                                                                                      |
+|------+-------------------------------------+-----------------------------------------------------------------------------------------------------------|
+| GDS  | Geometry Data Standard              | 描述集成电路伴读的一种格式，包括晶体管大小，数量，位置，连线，尺寸位置信息，是二进制文件                  |
+| NOC  | Network On Chip                     | 片上互联网络                                                                                              |
+| PHY  | PHYcial layer                       | 物理连接                                                                                                  |
+| HDP  | High density plasma                 | 高密度等离子体（能够定制沉积和原位刻蚀形貌 ，具有最佳的硅片间厚度均匀性和间隙填充均匀性）                 |
+| CIP  | Core Independent Peripherals        | Autonomous Peripherals operation, 独立于 CPU 的外设，用来减轻延迟，增加吞吐量                             |
+| UMC  | United Microelectronics Corporation | 华联电子                                                                                                  |
+| HBMH | High Bandwidth Memory               | 高带宽内存芯片                                                                                            |
+| CP   | Chip Probe                          | 晶圆CP 测试， 常用于功能测试和性能测试中，了解芯片是否工作正常，以及筛掉晶粒中的故障晶粒。                |
+| ATE  | Auto Test Equipment                 | 自动化测试设备                                                                                            |
+| DC   | Design Compiler                     | 将RTL 编译为门级电路                                                                                      |
+| STA  | Static Timing Analysis              | 静态时序分析                                                                                              |
+| CHI  | Coherent Hub Interface              | 高性能互联中心，用来连接高性能处理器和内存控制器                                                          |
+| BGA  | Ball Grid Array                     | 球栅阵列                                                                                                  |
+| PTH  | Pin Through Hole                    | 针脚封装                                                                                                  |
+| ECO  | Engineering Change Order            | 工程变更， 主要有两种 Pre-Mask ECO, Post Mask ECO, pre 是值 芯片在 Mask 前做 ECO, post 指在 Mask 后做 ECO |
+|      |                                     |                                                                                                           |
 
 ** 芯片设计过程
 芯片总体的设计过程如下所示：
