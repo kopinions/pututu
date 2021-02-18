@@ -14,15 +14,20 @@ jobs:
     - name: setup
       run: |
         sudo apt update -y
-        sudo apt install -y graphviz openssl fonts-wqy-microhei imagemagick texlive-latex-extra
-        sudo sed -i 's/\(<policy domain="coder" rights=\)"none" \(pattern="PDF" \/>\)/\1"read|write"\2/g' /etc/ImageMagick-6/policy.xml
+        sudo apt install -y graphviz openssl fonts-wqy-microhei texlive-latex-extra
+        sudo sed -i '/# deb-src.*bionic main restricted/ s/# deb-src/deb-src/' /etc/apt/sources.list
+        sudo apt update
+        sudo apt build-dep imagemagick
+        curl -sjklL https://www.imagemagick.org/download/ImageMagick.tar.gz -o - |tar -zxf - -C /tmp
+        pushd /tmp/ImageMagick-7*
+        ./configure && make && sudo make install
+        popd
+        sudo ldconfig /usr/local/lib
         sudo snap install emacs --classic
     - name: install
       run: |
         git submodule update --init
         npm install
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v2
     - name: genreate
       run: |
         npm run clean
