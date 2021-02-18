@@ -21,8 +21,8 @@ jobs:
       run: |
         git submodule update --init
         npm install
-    #- name: Setup tmate session
-    #  uses: mxschmitt/action-tmate@v2
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v2
     - name: genreate
       run: |
         npm run clean
