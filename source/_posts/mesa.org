@@ -2,6 +2,7 @@
 #+AUTHOR: 孙建康（rising.lambda）
 #+EMAIL:  rising.lambda@gmail.com
 #+DATE: <2020-02-15 12:40:20>
+#+UPDATED: <2021-02-22>
 #+LAYOUT: post
 #+EXCERPT:  mesa 源代码编译的过程，基于 ubuntu 19
 #+DESCRIPTION: mesa 源代码编译的过程，基于 ubuntu 19

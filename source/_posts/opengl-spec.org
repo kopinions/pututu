@@ -2,6 +2,7 @@
 #+AUTHOR: 孙建康（rising.lambda）
 #+EMAIL: rising.lambda@gmail.com
 #+DATE: <2019-08-31 12:40:20>
+#+UPDATED: <2019-08-31>
 #+LAYOUT: post
 #+EXCERPT:  很多时候我们听到或者看到 OpenGL 是 client server 模型，往往都是在说 OpenGL 的执行模型是 client-server 模型。这里的 client 一般是指用户写的应用程序，应用程序调用了 OpenGL 的相关接口。这里的 server 端一般指 OpenGL 的具体实现，这个实现可能是纯软件实现 OpenGL 规范，或者是软件＋GPU实现 OpenGL。这里的 client 会通过 OpenGL 提供的 API 向 OpenGL 发送相应的指令，Server 端处理指令。
 #+DESCRIPTION: 很多时候我们听到或者看到 OpenGL 是 client server 模型，往往都是在说 OpenGL 的执行模型是 client-server 模型。这里的 client 一般是指用户写的应用程序，应用程序调用了 OpenGL 的相关接口。这里的 server 端一般指 OpenGL 的具体实现，这个实现可能是纯软件实现 OpenGL 规范，或者是软件＋GPU实现 OpenGL。这里的 client 会通过 OpenGL 提供的 API 向 OpenGL 发送相应的指令，Server 端处理指令。

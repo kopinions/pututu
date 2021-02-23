@@ -2,6 +2,7 @@
 #+AUTHOR: 孙建康（rising.lambda）
 #+EMAIL: rising.lambda@gmail.com
 #+DATE: <2019-10-31 12:40:20>
+#+UPDATED: <2019-10-31>
 #+LAYOUT: post
 #+EXCERPT: 渲染管线顾名思义就是 OpenGL 在渲染的过程中需要采取的一系列的操作。这一系列操作的组合就被称之为渲染管线。
 #+DESCRIPTION: 渲染管线顾名思义就是 OpenGL 在渲染的过程中需要采取的一系列的操作。这一系列操作的组合就被称之为渲染管线。

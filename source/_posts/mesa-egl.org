@@ -2,12 +2,12 @@
 #+AUTHOR: 孙建康（rising.lambda）
 #+EMAIL:  rising.lambda@gmail.com
 #+DATE: <2020-02-15 12:40:20>
+#+UPDATED: <2020-02-15>
 #+LAYOUT: post
 #+EXCERPT:  meson 是一个新的构建工具。meson 提供一套新的 DSL 用来描述我们的项目结构，从而能达到简化我们构建脚本的目的。
 #+DESCRIPTION: meson 是一个新的构建工具。meson 提供一套新的 DSL 用来描述我们的项目结构，从而能达到简化我们构建脚本的目的。
 #+TAGS: mesa, opengl, vulkan, graphic, gpu
 #+CATEGORIES: graphics,mesa
-
 #+PROPERTY:    header-args        :comments org
 #+PROPERTY:    header-args        :mkdirp yes
 #+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t

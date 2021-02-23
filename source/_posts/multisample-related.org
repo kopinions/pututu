@@ -2,6 +2,7 @@
 #+AUTHOR: 孙建康（rising.lambda）
 #+EMAIL: rising.lambda@gmail.com
 #+DATE: <2019-10-31 12:40:20>
+#+UPDATED: <2019-10-31>
 #+LAYOUT: post
 #+EXCERPT:   因为我们通过离散的点来表达圆，所以不可避免的就会带来一些误差，这些误差在图形处理领域，我们称之为走样（aliasing). 我们需要一些手段减轻或者消除这种误差所带来影响的手段我们称之为反走样（Anti Aliasing）。
 #+DESCRIPTION: 因为我们通过离散的点来表达圆，所以不可避免的就会带来一些误差，这些误差在图形处理领域，我们称之为走样（aliasing). 我们需要一些手段减轻或者消除这种误差所带来影响的手段我们称之为反走样（Anti Aliasing）。

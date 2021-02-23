@@ -2,6 +2,7 @@
 #+AUTHOR: 孙建康（rising.lambda）
 #+EMAIL:  rising.lambda@gmail.com
 #+DATE: <2021-02-15>
+#+UPDATED: <2021-02-22>
 #+LAYOUT: post
 #+EXCERPT: 很大一块代码，如何分开添加，提交？如何随心所欲的想添加哪里就添加哪里？看完这篇文章你就知晓了。  
 #+DESCRIPTION:  很大一块代码，如何分开添加，提交？如何随心所欲的想添加哪里就添加哪里？看完这篇文章你就知晓了。
