@@ -1,4 +1,0 @@
-[submodule "themes/inside"]
-	path = themes/inside
-	url = https://github.com/ikeq/hexo-theme-inside.git
-	ignore = dirty

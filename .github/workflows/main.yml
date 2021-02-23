@@ -26,9 +26,7 @@ jobs:
         sudo snap install emacs --classic
     - name: install
       run: |
-        git submodule update --init
         npm install
-        pushd themes/inside && npm install && popd
     - name: genreate
       run: |
         npm run clean
