@@ -172,16 +172,9 @@ theme_config:
     bio: 为者常成，行者常至
   favicon: /images/favicon.png
   menu:
-    -
-      - 主页
-      - /
-    -
-      - 关于
-      - /about
-    -
-      - Github
-      - https://github.com/kopinions
-      - true
+    主页: /
+    关于: /about
+    Github: https://github.com/kopinions
   footer:
     # 默认显示 @2019 • author，设置为 false 可隐藏。
     copyright: '&copy; 2020 ❤️ <a href="">neo</a>'
