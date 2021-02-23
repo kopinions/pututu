@@ -2,8 +2,10 @@
 layout: post
 title: "Grunt 配置"
 date: 2014-05-27 21:20:20 +0800
-categories: frontend
-tags: frontend
+categories: 
+- frontend
+tags: 
+- frontend
 excerpt: grunt是一个node下的自动构建工具。他可以实现任务构建的自动化。
 description: grunt是一个node下的自动构建工具。他可以实现任务构建的自动化。可以直接使用node原生的包管理工具npm来安装。
 ---

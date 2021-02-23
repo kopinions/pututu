@@ -2,8 +2,12 @@
 layout: post
 title: "SF Best -- A campaign can not fail."
 date: 2014-04-20 15:44:20 +0800
-categories: mental business
-tags: mental business
+categories: 
+- mental
+- business
+tags: 
+- mental 
+- business
 excerpt: On Dragon Boat Festival of 2009, an accident try that promote rice dumplings while delivering by Shun Feng staff, has brought 1,000,000 RMB sales for Shun Feng. They have follow the suit in the 2010, and get 5,000,000RMB marketing success. It approves that courier has the native advantage to promote product to customer while they are deliver goods. This made Wang Wei inspired. 
 description: On Dragon Boat Festival of 2009, an accident try that promote rice dumplings while delivering by Shun Feng staff, has brought 1,000,000 RMB sales for Shun Feng. They have follow the suit in the 2010, and get 5,000,000RMB marketing success. It approves that courier has the native advantage to promote product to customer while they are deliver goods. This made Wang Wei inspired. 
 ---

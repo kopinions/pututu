@@ -2,8 +2,14 @@
 layout: post
 title: "如何使用Java Jersey MyBatis 编写微服务 REST API"
 date: 2014-10-10 20:22:50 +0800
-categories: java mybatis rest api
-tags: java mybatis rest api
+categories: 
+- java
+- mybatis 
+- rest api
+tags: 
+- java 
+- mybatis 
+- rest api
 excerpt: jersey 和 mybatis 做为 java 界的扛把子，我们应该如何一步一步的通过测试驱动开发的方式来完成一个API的实现过程。这篇文章会给以一个详细的介绍
 description: jersey 和 mybatis 做为 java 界的扛把子，我们应该如何一步一步的通过测试驱动开发的方式来完成一个API的实现过程。这篇文章会给以一个详细的介绍
 ---

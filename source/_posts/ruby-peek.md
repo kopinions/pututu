@@ -2,8 +2,10 @@
 layout: post
 title: "ruby 入门"
 date:  2014-07-08 19:30:20 +0800
-categories: language
-tags: language
+categories: 
+- language
+tags: 
+- language
 excerpt: Ruby是一种纯粹的面向对象编程语言。它由日本的松本行弘创建于1993年。Ruby 的特性与 Smalltalk、Perl 和 Python 类似。Perl、Python 和 Smalltalk 是脚本语言。Smalltalk 是一个真正的面向对象语言。Ruby，与 Smalltalk 一样，是一个完美的面向对象语言。使用 Ruby 的语法比使用 Smalltalk 的语法要容易得多。
 description: Ruby是一种纯粹的面向对象编程语言。它由日本的松本行弘创建于1993年。Ruby 的特性与 Smalltalk、Perl 和 Python 类似。Perl、Python 和 Smalltalk 是脚本语言。Smalltalk 是一个真正的面向对象语言。Ruby，与 Smalltalk 一样，是一个完美的面向对象语言。使用 Ruby 的语法比使用 Smalltalk 的语法要容易得多。
 ---

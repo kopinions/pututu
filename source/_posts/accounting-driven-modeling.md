@@ -2,7 +2,9 @@
 layout: post
 title: "时间驱动建模"
 date: 2014-07-20 20:33:50 +0800
-categories: architecture modeling
+categories: 
+- architecture 
+- modeling
 tags: architecture modeling
 excerpt: 对于时间驱动建模驱动力主要包括两块 1. 对于企业内部，驱动力大部分为KPI 2. 对于外部商业系统，驱动力为支出或者收入的钱
 description: 对于时间驱动建模驱动力主要包括两块 1. 对于企业内部，驱动力大部分为KPI 2. 对于外部商业系统，驱动力为支出或者收入的钱

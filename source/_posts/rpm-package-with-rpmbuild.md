@@ -2,7 +2,10 @@
 layout: post
 title: "RPM 安装包制作"
 date: 2019-09-12 19:18:20 +0800
-categories: linux package devops
+categories: 
+- linux 
+- package 
+- devops
 tags: linux package devops
 excerpt: rpm 包是预先在Linux主机上编译好并打包的文件，可以在离线的情况下进行安装。这边文件总结了笔者的 rpm 包的构建过程以及构建过程中遇到的各种问题，希望能帮助到各位。
 description: rpm 包是预先在Linux主机上编译好并打包的文件，可以在离线的情况下进行安装。这边文件总结了笔者的 rpm 包的构建过程以及构建过程中遇到的各种问题，希望能帮助到各位。

@@ -2,8 +2,12 @@
 layout: post
 title: "为什么我们需要NoSQL -- mongodb"
 date: 2014-07-28 10:50:22 +0800
-categories: architecture db
-tags: architecture db
+categories: 
+- architecture 
+- db
+tags: 
+- architecture 
+- db
 excerpt: 关系型数据库可以保证我们操作可以在一个事务中完成，即便这些数据来自不同不同表中的不同的行。(Atomic Consistent Isolated Durable) No-SQL中没有事务来保证夸多个聚合根的一致性。只有事务用来保证单一聚合的Atomic的属性。也就是说如果我们需要夸聚合根的一致性的时候，我们需要在应用程序级别来保证。
 description: 关系型数据库可以保证我们操作可以在一个事务中完成，即便这些数据来自不同不同表中的不同的行。(Atomic Consistent Isolated Durable) No-SQL中没有事务来保证夸多个聚合根的一致性。只有事务用来保证单一聚合的Atomic的属性。也就是说如果我们需要夸聚合根的一致性的时候，我们需要在应用程序级别来保证。
 ---

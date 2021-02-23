@@ -2,8 +2,12 @@
 layout: post
 title: "初尝ruby on rails"
 date: 2014-08-20 22:44:20 +0800
-categories: language framework
-tags: language framework
+categories: 
+- language 
+- framework
+tags: 
+- language 
+- framework
 excerpt: Ruby on Rails（官方简称为Rails，亦被简称为RoR），是一个使用Ruby语言写的开源Web应用框架，它是严格按照MVC结构开发的。它努力使自身保持简单，来使实际的应用开发时的代码更少，使用最少的配置。
 description: Ruby on Rails（官方简称为Rails，亦被简称为RoR），是一个使用Ruby语言写的开源Web应用框架，它是严格按照MVC结构开发的。它努力使自身保持简单，来使实际的应用开发时的代码更少，使用最少的配置。
 ---

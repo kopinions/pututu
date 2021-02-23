@@ -2,8 +2,10 @@
 layout: post
 title:  "Devops之Ansible 入门"
 date:   2014-07-25 16:17:59 +0800
-categories: devops
-tags: devops
+categories: 
+- devops
+tags: 
+- devops
 excerpt: ansible是个什么东西呢？官方的title是“Ansible is Simple IT Automation”——简单的自动化IT工具。这个工具的目标有这么几项：自动化部署APP；自动化管理配置项；自动化的持续交互；自动化的（AWS）云服务管理。Ansible 的免安装特性，使得 ansible 在 devops 中获得了非常广泛的使用。
 description: ansible是个什么东西呢？官方的title是“Ansible is Simple IT Automation”——简单的自动化IT工具。这个工具的目标有这么几项：自动化部署APP；自动化管理配置项；自动化的持续交互；自动化的（AWS）云服务管理。Ansible 的免安装特性，使得 ansible 在 devops 中获得了非常广泛的使用。
 ---

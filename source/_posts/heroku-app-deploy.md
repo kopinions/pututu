@@ -2,8 +2,10 @@
 layout: post
 title: "如何使用 Heroku 部署应用"
 date: 2014-07-09 22:14:50 +0800
-categories: devops
-tags: devops
+categories: 
+- devops
+tags: 
+- devops
 excerpt: 如何使用Heroku来部署一个新的应用
 description: 如何使用Heroku来部署一个新的应用(Heroku App Deploy)
 ---

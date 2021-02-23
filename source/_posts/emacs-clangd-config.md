@@ -2,8 +2,10 @@
 layout: post
 title:  "Linux emacs clangd 配置"
 date: 2019-10-08 19:09:20 +0800
-categories: emacs
-tags: emacs
+categories: 
+- emacs
+tags: 
+- emacs
 excerpt: 笔者的因为工作的原因需要使用 centos 工作， 并且工作的主要语言是 c/c++, 但是笔者比较习惯的 IDE 是 Intellij 或者 emacs。 所以笔者需要在 centos 上配置相应的 emacs 环境。但是在 centos 上使用 yum 安装 emacs 下只能安装 emacs 24.2, 所以笔者需要配置 emacs ,并且配置 emacs c++ 的环境。 
 description: 笔者的因为工作的原因需要使用 centos 工作， 并且工作的主要语言是 c/c++, 但是笔者比较习惯的 IDE 是 Intellij 或者 emacs。 所以笔者需要在 centos 上配置相应的 emacs 环境。但是在 centos 上使用 yum 安装 emacs 下只能安装 emacs 24.2, 所以笔者需要配置 emacs ,并且配置 emacs c++ 的环境。 
 ---

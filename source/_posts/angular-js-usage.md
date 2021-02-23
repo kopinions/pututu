@@ -2,8 +2,10 @@
 layout: post
 title:  "AngularJS 小记"
 date:   2013-12-19 20:15:01 +0800
-categories: frontend
-tags: frontend
+categories: 
+- frontend
+tags: 
+- frontend
 excerpt: AngularJS 是一款来自 Google 的前端 JavaScript 框架，也是 SPA（single-page-application，单页应用）框架。AngularJS 框架的体积非常小，但是设计理念和功能却非常强大，极大地简化前端开发的负担，它快速成为了 JavaScript 的主流框架，帮助开发者从事 web 开发。
 description: AngularJS 是一款来自 Google 的前端 JavaScript 框架，也是 SPA（single-page-application，单页应用）框架。AngularJS 框架的体积非常小，但是设计理念和功能却非常强大，极大地简化前端开发的负担，它快速成为了 JavaScript 的主流框架，帮助开发者从事 web 开发。
 ---
