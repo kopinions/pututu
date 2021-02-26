@@ -36,4 +36,5 @@ jobs:
         GH_DEPLOY_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
         CODING_DEPLOY_TOKEN: ${{ secrets.CODING_DEPLOY_TOKEN }}
       run: |
-        npm run deploy
+        echo ${CODING_DEPLOY_TOKEN}
+        npm run deploy -- --debug
