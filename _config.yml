@@ -93,13 +93,17 @@ ignore:
 
 
 deploy:
-  type: git
   repo:
-    url: https://github.com/kopinions/pututu.git
-    branch: gh-pages
-    token: $DEPLOY_TOKEN
+    github:
+      url: https://github.com/kopinions/pututu.git
+      branch: gh-pages
+      token: $DEPLOY_TOKEN
+    coding:
+      url: https://e.coding.net/kopinions/pututu/pututu.git
+      branch: master
+      token: $CODING_DEPLOY_TOKEN
   name: neo
-  email: sjkyspa@gmail.com
+  email: rising.lambda@gmail.com
   message: "feat: update posts"
 
 org:
