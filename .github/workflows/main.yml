@@ -33,6 +33,7 @@ jobs:
         npm run build
     - name: deploy
       env:
-        DEPLOY_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+        GH_DEPLOY_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
+        CODING_DEPLOY_TOKEN: ${{ secrets.CODING_DEPLOY_TOKEN }}
       run: |
         npm run deploy

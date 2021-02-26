@@ -97,7 +97,7 @@ deploy:
     github:
       url: https://github.com/kopinions/pututu.git
       branch: gh-pages
-      token: $DEPLOY_TOKEN
+      token: $GH_DEPLOY_TOKEN
     coding:
       url: https://e.coding.net/kopinions/pututu/pututu.git
       branch: master
