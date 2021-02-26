@@ -14,7 +14,7 @@
   "devDependencies": {
     "hexo": "^5.3.0",
     "hexo-cli": "^4.2.0",
-    "hexo-deployer-git": "^3.0.0",
+    "hexo-deployer-git": "github:kopinions/hexo-deployer-git",
     "hexo-generator-archive": "^1.0.0",
     "hexo-generator-category": "^1.0.0",
     "hexo-generator-index": "^2.0.0",

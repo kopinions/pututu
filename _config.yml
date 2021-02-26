@@ -101,7 +101,7 @@ deploy:
       token: $GH_DEPLOY_TOKEN
     coding:
       url: https://e.coding.net/kopinions/pututu/pututu.git
-      branch: master
+      branch: coding-pages
       token: $CODING_DEPLOY_TOKEN
   name: neo
   email: rising.lambda@gmail.com

@@ -31,8 +31,8 @@ jobs:
       run: |
         npm run clean
         npm run build
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v2
+    # - name: Setup tmate session
+    #  uses: mxschmitt/action-tmate@v2
     - name: deploy
       env:
         GH_DEPLOY_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
