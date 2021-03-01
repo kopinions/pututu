@@ -1,0 +1,34 @@
+#+TITLE: SIMD, SIMT 到底是什么鬼？
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
+#+DATE: 2021-02-27
+#+UPDATED: 2021-02-27
+#+LAYOUT: post
+#+EXCERPT:  
+#+DESCRIPTION: 
+#+TAGS: gpu, parallel computation
+#+CATEGORIES: gpu 
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+BIND:        org-preview-latex-image-directory "simd_vs_simt"
+#+OPTIONS:     tex:imagemagick
+#+LATEX_HEADER:\usepackage{xeCJK}
+#+LATEX_HEADER:\setCJKmainfont{Heiti SC}
+
+SIMD 和 SIMT 作为接触过并行计算的同学应该是非常熟悉了。这篇文章主要关注从历史的角度分析为什么会出现 SIMD 以及 SIMD.
+
+对于冯诺伊曼架构来说主要的元素有指令和数据。以及执行和存储指令的处理器和存储器。
+
+
+*** 什么是 SIMD
+    
+*** 为什么 SIMD
+
+*** 什么是 SIMT
+    
+*** 为什么 SIMT
+
+*** 
