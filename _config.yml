@@ -109,9 +109,8 @@ deploy:
 
 org:
   debug: true
-  emacs: emacs
-  emacsclient: emacsclient
-  cachedir: ./hexo-org-cache/
+  cachedir: ./.cache.d
+  offlinedir: ./.offline.d
   theme: tango-dark
   highlight:
     enable: true
