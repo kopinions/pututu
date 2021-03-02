@@ -40,7 +40,7 @@ external_link:
   field: site # Apply to the whole site
   exclude: ''
 filename_case: 0
-render_drafts: true
+render_drafts: false
 post_asset_folder: true
 relative_link: true
 future: true
@@ -108,8 +108,8 @@ deploy:
   message: "feat: update posts"
 
 org:
-  emacs: emacs
-  emacsclient: emacsclient
+  emacs: /Applications/Emacs.app/Contents/MacOS/Emacs
+  emacsclient: /Applications/Emacs.app/Contents/MacOS/bin/emacsclient
   debug: true
   cachedir: ./.cache.d
   offlinedir: ./.offline.d

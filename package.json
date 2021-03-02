@@ -21,11 +21,12 @@
     "hexo-generator-tag": "^1.0.0",
     "hexo-renderer-ejs": "^1.0.0",
     "hexo-renderer-marked": "^4.0.0",
-    "hexo-renderer-orgmode": "github:kopinions/hexo-renderer-orgmode#52a2fe7d6bf798ae22a71f29f4f6dfaad52cc2d9",
+    "hexo-renderer-orgmode": "github:kopinions/hexo-renderer-orgmode#b4076013099e05741514af92ed482aa9f26e0b05",
     "hexo-renderer-stylus": "^2.0.1",
     "hexo-server": "^2.0.0",
     "hexo-theme-inside": "^2.7.0-beta.11",
     "minimist": "^1.2.5",
     "uuid": "^8.3.2"
   }
+
 }
