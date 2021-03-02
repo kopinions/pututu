@@ -108,8 +108,8 @@ deploy:
   message: "feat: update posts"
 
 org:
-  emacs: /Applications/Emacs.app/Contents/MacOS/Emacs
-  emacsclient: /Applications/Emacs.app/Contents/MacOS/bin/emacsclient
+  emacs: emacs 
+  emacsclient: emacsclient 
   debug: true
   cachedir: ./.cache.d
   offlinedir: ./.offline.d
