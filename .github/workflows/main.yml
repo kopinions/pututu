@@ -16,6 +16,9 @@ jobs:
         sudo apt update -y
         sudo apt install -y graphviz openssl fonts-wqy-microhei texlive-latex-extra
         sudo snap install emacs --classic
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '15'
     - name: Setup tmate session
       uses: mxschmitt/action-tmate@v2
     - name: Install Imagemagick
