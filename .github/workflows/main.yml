@@ -11,19 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: setup
+    - name: install imagemagick
       run: |
-        sudo apt update -y
-        sudo apt install -y graphviz openssl fonts-wqy-microhei texlive-latex-extra
-        sudo snap install emacs --classic
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '15'
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v2
-    - name: Install Imagemagick
-      run: |
-        sudo sed -i '/# deb-src.*bionic main restricted/ s/# deb-src/deb-src/' /etc/apt/sources.list
+        sudo sed -i '/# deb-src.* main restricted$/ s/# deb-src/deb-src/' /etc/apt/sources.list
         sudo apt update
         sudo apt build-dep imagemagick
         curl -sjklL https://www.imagemagick.org/download/ImageMagick.tar.gz -o - |tar -zxf - -C /tmp
@@ -31,11 +21,21 @@ jobs:
         ./configure && make && sudo make install
         popd
         sudo ldconfig /usr/local/lib
-    - name: build
+    - name: setup emacs
+      run: |
+        sudo apt update -y
+        sudo apt install -y graphviz openssl fonts-wqy-microhei texlive-latex-extra
+        sudo snap install emacs --classic
+    - uses: actions/setup-node@v2
+      with:
+        node-version: '15'
+    #- name: setup debug session
+    #  uses: mxschmitt/action-tmate@v2
+    - name: hexo build
       run: |
         npm install
         npm run clean
-        npm run build
+        npm run generate
     - name: deploy
       env:
         GH_DEPLOY_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
