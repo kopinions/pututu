@@ -24,7 +24,9 @@ jobs:
     - name: setup emacs
       run: |
         sudo apt update -y
-        sudo apt install -y graphviz openssl fonts-wqy-microhei texlive-latex-extra
+        sudo apt install -y graphviz openssl fonts-wqy-microhei
+        # sudo apt install -y texlive-latex-extra texlive-generic-recommended
+        sudo apt install -y texlive-full
         sudo snap install emacs --classic
     - uses: actions/setup-node@v2
       with:
