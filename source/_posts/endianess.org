@@ -13,7 +13,7 @@
 #+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
 #+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
 #+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
-#+BIND:        org-preview-latex-image-directory ""
+#+BIND:        org-preview-latex-image-directory "endianess"
 #+OPTIONS:     tex:imagemagick
 #+LATEX_HEADER:\usepackage{xeCJK}
 #+LATEX_HEADER:\setCJKmainfont{Heiti SC}
@@ -35,7 +35,7 @@
     从历史的观点来看，一个字节表示的是编码单个字符所需要的 bit 数量，ascii 表中总共有 256 个字符，所以总共需要 8 个 bit 来表示字符，所以现在我们使用的一个字节就是 8 个 bit. 通常我们使用 byte
     作为信息计量的单位。比如表示一个 0-65536 之间的数，就需要两个 byte. 往往这些信息需要存储在内存中。内存地址的编址如下所示：
 
-    [[./mem.png]]
+    [[./endianess/mem.png]]
     
     那么我们在内存中如何写入一个 short(2 byte) 的数字，并且我们还能在正确的把这个数字从内存中读出来？
 
@@ -49,7 +49,7 @@
     
     具体存储如下图所示：
 
-    [[./big_small_endian.png]]
+    [[./endianess/big_small_endian.png]]
 
 
     细心的同学一定会发现，如果我们大家都按照一种顺序来进行存储和读取完全是不会出问题了，为什么我们不统一一下呢？ 答案是大小端在硬件设计中各有自己的优缺点，不同场景下可能会有不同的选择。另外
@@ -69,7 +69,9 @@
 
     大端 == 高位开始（当前内存地址开始读取为高位，下一个内存地址为次高位）
     小端 == 低位开始（当前内存地址开始读取为低位，下一个内存地址为次低位）
-    
+
+    如下图所示
+    [[./endianess/memo.png]]
     
 *** 如何判断大小端   
     
