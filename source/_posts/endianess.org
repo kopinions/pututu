@@ -4,10 +4,10 @@
 #+DATE: 2021-03-11
 #+UPDATED: 2021-03-11
 #+LAYOUT: post
-#+EXCERPT:  
-#+DESCRIPTION: 
-#+TAGS: 
-#+CATEGORIES: 
+#+EXCERPT:  相信大小端大家都不陌生，但是很多时候会混淆，什么是大端，什么是小端，本文从大小端的历史出发，提出一种方便记忆的方式，并且给出一些判断大小端的方式。
+#+DESCRIPTION: 相信大小端大家都不陌生，但是很多时候会混淆，什么是大端，什么是小端，本文从大小端的历史出发，提出一种方便记忆的方式，并且给出一些判断大小端的方式。
+#+TAGS: encoding, ic  
+#+CATEGORIES: encoding, ic
 #+PROPERTY:    header-args        :comments org
 #+PROPERTY:    header-args        :mkdirp yes
 #+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
@@ -58,7 +58,7 @@
 *** 大小端各自的优势
     在讨论优势前，我们需要知道地是处理器在访问存储地时候，都是从低地址向高地址读取的。
 **** 大端优势
-    - 符号位（最高位）在低地址，这样 cpu 在处理的时候，能非常快的值的正负情况
+     - 符号位（最高位）在低地址，这样 cpu 在处理的时候，能非常快的值的正负情况
 **** 小端优势
      - 最低位在低地址，最高位在高地址，这样在强制类型转换的时候，不需要调整内存的顺序。
      - CPU 在从低地址读取操作数进行运算，低地址是低位，这样依次计算完成进位，会更加高效。
@@ -69,11 +69,99 @@
 
     大端 == 高位开始（当前内存地址开始读取为高位，下一个内存地址为次高位）
     小端 == 低位开始（当前内存地址开始读取为低位，下一个内存地址为次低位）
-
+    
     
 *** 如何判断大小端   
     
 **** 命令行
 
+   1. 使用 octal, decimal, hex, ascii dump 工具
+     #+BEGIN_SRC shell :eval never :exports code
+       echo -n I | od -o | head -n1 | cut -f2 -d" " | cut -c6
+     #+END_SRC
+     输出 1 为小端模式， 输出为 0, 为大端模式。
+   2. 使用 lscpu
+      #+BEGIN_SRC shell :eval never :exports code
+	lscpu | grep -i byte
+      #+END_SRC
+      会直接输出大小端。
+
 **** 代码
-       
+     
+***** 使用强制在转换
+      #+BEGIN_SRC cpp :eval never :exports code
+	#include <stdio.h>
+	#include <iostream>
+	using namespace std;
+
+	int main()
+	{
+	  int num = 1;
+	  if(*(char*)&num ==1)
+	    {
+	      printf("小端字节序\n");
+	    }
+	  else
+	    {
+	      printf("大端字节序\n");
+	    }
+
+	  return 0;
+	}
+      #+END_SRC
+
+
+      
+***** 使用 union
+      #+BEGIN_SRC cpp :eval never :exports code
+	#include <iostream>
+	using namespace std;
+
+	union A{
+	  char c;
+	  int a;	
+	}A;
+
+	int main()
+	{
+	  A.a = 1;
+	  if(A.c == 1)
+	    {
+	      cout<<"小端字节序"<<endl;
+	    }
+	  else 
+	    {
+	      cout<<"大端字节序"<<endl;
+	    }
+
+	  return 0;
+	}
+      #+END_SRC
+
+***** 使用 union 2
+      #+BEGIN_SRC cpp :eval never :exports code
+	#include <stdio.h>
+	#include <iostream>
+	using namespace std;
+
+	union{
+	  int i;
+	  char c[sizeof(int)];
+	}num;
+
+	int main()
+	{
+	  num.i = 1;
+	  if(num.c[0] == 0)
+	    {
+	      printf("小端字节序\n");
+	    }
+	  else 
+	    {
+	      printf("大端字节序\n");
+	    }
+
+	  return 0;
+	}
+      #+END_SRC
+
