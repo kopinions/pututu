@@ -2,6 +2,7 @@
 layout: post
 title: "RPM 安装包制作"
 date: 2019-09-12 19:18:20 +0800
+updated: 2021-04-05
 categories: 
 - linux 
 - package 
@@ -166,5 +167,18 @@ tar -tf wechat.tar.gz
 
 # 安装 rpm 包, 不安装依赖，并且强制安装
 rpm -ivh --nodeps --froce xxx.rpm
+```
+
+### 调试 rpm 包中会用到的 RPM 的命令
+
+```
+# 查询已经安装的包的 rpm 包的 pre 和 post hook
+rpm -q --scripts xxx
+# 查询 rpm 文件的 hook
+rpm -qp --script xxx.rpm
+# 安装到自定义的目录
+yum install --installroot=/custom/dir xxxx
+# 安装的时候，显示 hook 执行的详细信息
+yum install --installroot=/custom/dir --rpmverbosity=debug xxxx 
 ```
 
