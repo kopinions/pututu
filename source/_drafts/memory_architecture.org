@@ -1,0 +1,40 @@
+#+TITLE: CPU & GPU 内存架构
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
+#+DATE: 2021-04-06
+#+UPDATED: 2021-04-06
+#+LAYOUT: post
+#+EXCERPT:  
+#+DESCRIPTION: 
+#+TAGS: 
+#+CATEGORIES: 
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+BIND:        org-preview-latex-image-directory ""
+#+OPTIONS:     tex:imagemagick
+#+LATEX_HEADER:\usepackage{xeCJK}
+#+LATEX_HEADER:\setCJKmainfont{Heiti SC}
+
+
+如何让一个 CPU 运转起来呢？很简单， 向 CPU 提供指令和数据就可以。数据和指令都被存储在存储器中，也就是我们常说的内存。
+
+*** CPU 如何去获取指令和数据
+  CPU 如何去获取指令和数据呢？
+
+*** CPU 如何去控制外设
+  CPU 访问的设备一般会有内存和外设寄存器。
+
+*** CPU 如何去控制外设的内存
+    
+*** 优化
+
+    
+  参考：
+- [[http://imgtec.eetrend.com/d6-imgtec/forum/2018-03/11344.html][GPU 与 CPU 的数据交互]]
+- [[https://baike.baidu.com/item/CPU%E6%80%BB%E7%BA%BF][CPU 总线]]
+- [[https://zhuanlan.zhihu.com/p/322449118][CPU 确定物理地址的玄机]]
+- [[https://www.pianshen.com/article/3911591128/][PCIe 内存地址空间]]
+- [[https://www.shangmayuan.com/a/480520689a2d466d997e8d44.html][CPU GPU 协同工作]]
