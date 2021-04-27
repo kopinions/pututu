@@ -136,3 +136,12 @@
 
      3D 场景中会由很多的模型，这些模型需要经过很多的变换，然后进行着色，最终显示，这中间涉及到海量的顶点的同质计算，
      非常适合 GPU 高并发的执行，所以通常会用 GPU 来加速 3D 模型的渲染过程。
+
+**** 软核，固核，硬核
+     IP(Intellectural Property), 就是常说的知识产权。美国 Dataquest 将半导体行业里的 IP 定义为：用于 ASIC(Application Specific Integrated Circuit),
+     ASSP(Application Specific Standard Product), PLD(Programable Logic Device ) 中，并且是预先设计好的电路模块。
+     IP 模块一般有： 行为（Behaviour）， 结构（Structure）， 物理（Physical）三级不同程度的设计。对应描述不同程度的设计分为三类：软核，固核，硬核。
+
+     软核（Soft IP core）：描述行为。描述具体的行为逻辑的HDL(Hardware Description Language) 的代码，不包含任何物理实现相关的信息。常见的交付方式是：RTL(Register Transfer Level) 代码。
+     固核（Firm IP core）：描述结构；介于软核和硬核之间，除了完成软核的所有设计之外，还完成了门级电路综合和时序仿真等环节。常见的交付方式是：门级网表。
+     硬核（Hard IP core）：基于物理描述，并且经过相关工艺验证的硬核。 常见的交付方式是，基于工艺（TSMC 14nm）的电路物理结构掩模。可以拿来给用。
