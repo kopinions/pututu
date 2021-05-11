@@ -1,0 +1,65 @@
+#+TITLE: 半导体生产领域常见概念＋缩写
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
+#+DATE: 2021-04-19
+#+UPDATED: 2021-04-19
+#+LAYOUT: post
+#+EXCERPT:  半导体生产过程中常见的概念，解释，以及缩写
+#+DESCRIPTION: 半导体生产过程中常见的概念，解释，以及缩写
+#+TAGS: ic
+#+CATEGORIES: ic 
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+BIND:        org-preview-latex-image-directory ""
+#+OPTIONS:     tex:imagemagick
+#+LATEX_HEADER: \usepackage{xeCJK}
+#+LATEX_HEADER: \setCJKmainfont{Heiti SC}
+
+*** Semiconductor(半导体)
+    在物理和电子工程中，按照物质的导电特性将物质分为三类：导体，半导体，绝缘体。
+
+    - 导体：导电系数大，对电的传导非常容易，比如金，银，铜，铁，人，水。
+    - 绝缘体：导电系数非常小，对电的传导非常不容易，比如塑料，木头，皮革
+    - 半导体：介于导体和绝缘体的物质。平常不导电，特定情况导电（额定电压）。常见的我们在四价硅中添加三价（镓）或者五价（磷，砷）的杂质，形成半导体。
+    
+*** Fabless
+    
+*** Fab
+    
+*** Wafer(晶圆)
+    Wafer 愿意为威化（没错就是威化饼干那个威化）。威化上布满细小的方格，芯片的生产过程非常象制作 “半导体威化”。
+
+    晶圆是经过提纯，结晶形成的单晶硅，经过切割，打磨，形成的的非常薄的，圆形的硅片。常见的晶圆有 8 寸，12 寸。
+
+    每个晶圆在生产中都会唯一的进行编号，叫  Wafer ID (晶圆编号)。Wafer ID 用来进行任务，调度，后续处理的跟踪。
+    
+*** Die(裸晶), dice, dies
+    Die 裸晶，也称裸片，裸芯片，晶粒。通常情况下，集成电路是以大批方式，经过光刻各种比较复杂的步骤，制作在大片的半导体晶圆上
+    然后再切割成方形的小片，这一小片就是 die.
+    
+*** Lot (批次)
+
+    所有的 FAB 工厂在接受生产订单的时候，可以接受多少批晶圆的生产。一批可以有很多个晶圆（一般是25个），最少需要有一个晶圆进行生产。
+
+    每一批次都会有一个 Lot ID (批次编号), 客户可以根据这个来追踪生产进度。每个 Lot 内的 Wafer ID 唯一。
+
+*** Manufactor Part ID (制造商零件编码)
+
+    所有 fabless 厂商在下单的时候，会对应到自己内部的零部件 ID。这个 ID 会被记录下来，以便完成制造商和客户系统间的关联。
+
+*** WIP(Work in progress) 在制品，半成品
+    从芯片的投产到最终生成芯片产品（die），工厂中有很多各个流程中几类了非常多的半成品，统一称之为在制品。
+
+    WIP 又可以分为：Stage WIP。 Stage 见下面的概念。
+    
+*** PCS(Pieces), 片数
+    件数，片数。
+
+*** Stage()
+    
+*** Pod (豆荚)
+    
+   
