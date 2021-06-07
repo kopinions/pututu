@@ -161,3 +161,13 @@
      soft repair 指在运行了一段时间后，存储内部不断的老化，有些单元或者信号线老化，从而不能正常的工作，这种情况下，我们需要使用 soft repair 进行内存的修复。
 
      soft repair 和 hard repair 都是在芯片上电初始化过程中进行的。
+
+**** 热插拔（Hot Plug Detect）
+     热插拔是允许用户在不关闭系统，在不切断电源的情况下，插入或者拔出硬件，从而提高系统的可用性，扩展性和灵活性。
+     常见的热插拔有 HDMI, DP。
+
+     HDMI 有两个端：源端（Source）和数据接收端（Sink）。HPD 信号是由 Sink 端生成，并送到 Source 端的一个检测信号。
+     当显示器连接时， HPD 信号拉高（高于 2v, source 端认为设备插入），这个时候 Source 认为设备插入，开始设备初始化流程
+     。包括读取设备 ID, 开启传输 TMDS 信号（Transition Minimized Differencial Signal）。
+
+     详细请参考[[https://www.cnblogs.com/yuanqiangfei/p/10387169.html][HDMI接口之HPD（热拔插）]]
