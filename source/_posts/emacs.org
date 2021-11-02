@@ -2,7 +2,7 @@
 #+AUTHOR: 孙建康（rising.lambda）
 #+EMAIL:  rising.lambda@gmail.com
 #+DATE: <2019-06-30 12:40:20>
-#+UPDATED: <2019-06-30>
+#+UPDATED: <2021-11-02>
 #+LAYOUT: post
 #+EXCERPT: emacs 各种常见的使用技巧  
 #+DESCRIPTION: emacs 各种常见的使用技巧
@@ -142,6 +142,9 @@ C-| 重新布局成垂直分隔， C-_ 重新分隔为水平布局。
 **** org table
 ***** 在单元格内完成换行
       可以使用 M-RET 在单元格内完成换行的操作。
+**** org agenda
+***** 如何将循环任务标记为 done
+      C-u -1 C-c C-t DONE, 使用 -1 作为 prefix 参数，调用 org-todo 将状态改为 DONE, repeat 的任务会自动被标记为 DONE
 *** ivy
 **** ivy search and edit
      当使用 ivy M-? 进行搜索的时候，搜索的结果是单独的窗口中显示的。这种情况下可以使用 C-c C-o 在新窗口打开查找结果。但是新打开的查找结果是只读的。此时需要使用C-x C-q 进入 (ivy-wgrep-change-to-wgrep-mode),
