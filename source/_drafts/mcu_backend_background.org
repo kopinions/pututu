@@ -1,0 +1,26 @@
+#+TITLE: mcu 后端架构设计总览
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
+#+DATE: 2021-05-27
+#+UPDATED: 2021-05-27
+#+LAYOUT: post
+#+EXCERPT:  
+#+DESCRIPTION: 
+#+TAGS: 
+#+CATEGORIES: 
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+BIND:        org-preview-latex-image-directory ""
+#+OPTIONS:     tex:imagemagick
+#+LATEX_HEADER:\usepackage{xeCJK}
+#+LATEX_HEADER:\setCJKmainfont{Heiti SC}
+** 词汇表
+    |              |   |                                                                                     |
+    | Endcap cell  |   | 摆在 design 的左右边界， 或者 power domain 的左右边界， 需要关注 N-Well, N 井的方向 |
+    | Welltap cell |   | 放置芯片电子锁死                                                                    |
+    | Decap cell   |   | 修动态压降（IR drop）， 但是会增加 leakage power 泄露功耗                           |
+    |              |   |                                                                                     |
+    
