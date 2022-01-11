@@ -4,16 +4,16 @@
 #+DATE: 2022-01-11
 #+UPDATED: 2022-01-11
 #+LAYOUT: post
-#+EXCERPT:  
-#+DESCRIPTION: 
-#+TAGS: 
-#+CATEGORIES: 
+#+EXCERPT:  一个IC 前端遇到的一些后端的概念
+#+DESCRIPTION: 一个IC 前端遇到的一些后端的概念
+#+TAGS: ic
+#+CATEGORIES: ic
 #+PROPERTY:    header-args        :comments org
 #+PROPERTY:    header-args        :mkdirp yes
 #+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:nil ^:nil *:t <:t -:t f:t |:t ::t
 #+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
 #+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
-#+BIND:        org-preview-latex-image-directory ""
+#+BIND:        org-preview-latex-image-directory "ic-be"
 #+OPTIONS:     tex:imagemagick
 
 #+LaTeX_CLASS: article
@@ -49,4 +49,7 @@
      使用这道槽来实现 feedthrough ,而对 blocklevel 来说，这道槽相当于是一个 routing blockage。
      这个概念与 ICC 里的FlyOver类似。
 
+     下面这个图片就是 feed through
+
+     [[./ic-be/feedthrough.jpeg]]
 
