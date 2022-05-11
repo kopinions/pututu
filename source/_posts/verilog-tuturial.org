@@ -146,7 +146,6 @@ parameter [signed][[msb:lsb]] param1 = 1b'0, param2=1'b1;
 localparam hsel = 1'b1
 #+END_SRC
 
-
 #+BEGIN_SRC text :exports none :eval never
 非阻塞赋值是否是多个硬件电路存在？
 
@@ -170,7 +169,7 @@ fix, unfix, float
 运算的基本原理，比如整型相加，浮点数相加，之类的基本的计算原理
 
 
- 变量在被综合的时候对应的线路是什么？
+变量在被综合的时候对应的线路是什么？
 变量和逻辑都可以被综合，综合的时候对应的硬件电路是不一样的。。
 
 我们只要搞懂 指令做的事情，就可以知道如何去写？
@@ -180,3 +179,49 @@ generate 的功能是什么？ verilog
 
 芯片设计的是 domain 非常相关的。处理的就是将功能以硬件的形式表达出来，或者优化。
 #+END_SRC
+*** 综合相关
+**** 异步复位
+     #+BEGIN_SRC verilog :eval never :exports code :noweb yes
+       module test (/*AUTOARG*/
+                    // Inputs
+                    clk,
+                    reset_n
+                    ) ;
+         input wire clk;
+         input wire reset_n;
+         reg        some_en;
+
+         always @ ( posedge clk or negedge reset_n ) begin
+           if (~reset_n) begin
+             some_en <= 1'b0;
+           end else begin
+             some_en <= 1'b1;
+           end
+         end
+
+       endmodule // test
+     #+END_SRC
+     对于上面模块，因为 reset_n 在 always 的信号关注列表，这种情况下会综合成异步复位，同步释放的逻辑
+**** 同步复位
+     #+BEGIN_SRC verilog :eval never :exports code :noweb yes
+       module test (/*AUTOARG*/
+                    // Inputs
+                    clk,
+                    reset_n
+                    ) ;
+         input wire clk;
+         input wire reset_n;
+         reg        some_en;
+
+         always @ ( posedge clk ) begin
+           if (~reset_n) begin
+             some_en <= 1'b0;
+           end else begin
+             some_en <= 1'b1;
+           end
+         end
+       endmodule // test
+     #+END_SRC
+
+     对于这种写法综合出来的就是同步复位的 reset, 因为 电路描述的是，不关心 reset 的沿，意味着 reset 和 clk 应该是
+     同步的。
