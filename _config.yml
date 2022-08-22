@@ -98,11 +98,11 @@ deploy:
     github:
       url: https://github.com/kopinions/pututu.git
       branch: gh-pages
-      token: $GH_DEPLOY_TOKEN
+      token: $PUTUTU_ACCESS_TOKEN_GITHUB
     coding:
-      url: https://e.coding.net/kopinions/pututu/pututu.git
-      branch: coding-pages
-      token: $CODING_DEPLOY_TOKEN
+      url: https://gitee.com/kopinions/pututu.git
+      branch: pages
+      token: $PUTUTU_ACCESS_TOKEN_GITEE
   name: neo
   email: rising.lambda@gmail.com
   message: "feat: update posts"
