@@ -12,7 +12,6 @@ RUN apt-get update -y \
     && git clone https://github.com/ImageMagick/ImageMagick.git /tmp/imagemagick \
     && cd /tmp/imagemagick \
     && ./configure --prefix=/opt/imagemagick && make && make install
-RUN ldconfig /usr/local/lib
 
 
 FROM ubuntu:latest
