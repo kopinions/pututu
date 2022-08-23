@@ -3,45 +3,27 @@ name: htmlize
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
+    container:
+        image: kopinions/ohtmlize:latest
     steps:
-    - uses: actions/checkout@v2
-    - name: install imagemagick
-      run: |
-        sudo sed -i '/# deb-src.* main restricted$/ s/# deb-src/deb-src/' /etc/apt/sources.list
-        sudo apt update
-        sudo apt build-dep imagemagick
-        curl -sjklL https://www.imagemagick.org/download/ImageMagick.tar.gz -o - |tar -zxf - -C /tmp
-        pushd /tmp/ImageMagick-7*
-        ./configure && make && sudo make install
-        popd
-        sudo ldconfig /usr/local/lib
-    - name: setup emacs
-      run: |
-        sudo apt update -y
-        sudo apt install -y graphviz openssl fonts-wqy-microhei
-        # sudo apt install -y texlive-latex-extra texlive-generic-recommended
-        sudo apt install -y texlive-full
-        sudo snap install emacs --classic
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '15'
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '15'
     # - name: setup debug session
     #  uses: mxschmitt/action-tmate@v2
-    - name: hexo build
-      run: |
-        npm install
-        npm run clean
-        npm run generate
-    - name: deploy
-      env:
-        GH_DEPLOY_TOKEN: ${{ secrets.GH_DEPLOY_TOKEN }}
-        CODING_DEPLOY_TOKEN: ${{ secrets.CODING_DEPLOY_TOKEN }}
-      run: |
-        echo ${CODING_DEPLOY_TOKEN}
-        npm run deploy -- --debug
+      - name: hexo build
+        run: |
+          npm install
+          npm run clean
+          npm run generate
+      - name: deploy
+        env:
+          PUTUTU_ACCESS_TOKEN_GITHUB: ${{ secrets.PUTUTU_ACCESS_TOKEN_GITHUB }}
+          PUTUTU_ACCESS_TOKEN_GITEE: ${{ secrets.PUTUTU_ACCESS_TOKEN_GITHUB }}
+        run: |
+          npm run deploy -- --debug
