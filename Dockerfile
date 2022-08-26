@@ -21,7 +21,8 @@ RUN cd /tmp/imagemagick \
     && ./configure --prefix=/opt && make && make install
 
 ENV LD_LIBRARY_PATH=/opt/lib
-RUN apt-get install -y 
+# emacs lucid support
+RUN apt-get install -y libxaw7-dev
 RUN cd /tmp/emacs \
      && ./autogen.sh \
      && PKG_CONFIG_PATH=/opt/lib/pkgconfig ./configure --with-native-compilation --with-imagemagick --with-x-toolkit=lucid --prefix=/opt \
@@ -34,8 +35,7 @@ ENV PATH=/opt/bin:$PATH
 ENV LD_LIBRARY_PATH=/opt/lib
 
 RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends libtiff5 libpng16-16 libgif7 libncurses5 libgtk2.0-0 libx11-6 libgnutls-dane0 libjansson4 libgccjit0 libsm6 libcurl3-gnutls \
+    && apt-get install -y --no-install-recommends libxaw7 libtiff5 libpng16-16 libgif7 libncurses5 libgtk2.0-0 libx11-6 libgnutls-dane0 libjansson4 libgccjit0 libsm6 libcurl3-gnutls \
     && apt-get install -y --no-install-recommends graphviz openssl fonts-wqy-microhei \
     && apt-get install -y --no-install-recommends openjdk-11-jre-headless \
     && rm -rf /var/lib/apt/lists/*
-
