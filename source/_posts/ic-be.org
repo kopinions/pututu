@@ -14,7 +14,7 @@
 #+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
 #+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
 #+BIND:        org-preview-latex-image-directory "ic-be"
-#+OPTIONS:     tex:imagemagick
+#+OPTIONS:     tex:magick
 
 #+LaTeX_CLASS: article
 #+LaTeX_CLASS_OPTIONS: [12pt]
