@@ -40,4 +40,5 @@ RUN apt-get update -y \
     && apt-get install -y --no-install-recommends libxaw7 libtiff5 libpng16-16 libgif7 libncurses5 libgtk2.0-0 libx11-6 libgnutls-dane0 libsm6 libcurl3-gnutls libgomp1 \
     && apt-get install -y --no-install-recommends graphviz openssl fonts-wqy-microhei texlive-base\
     && apt-get install -y --no-install-recommends openjdk-11-jre-headless \
+    && apt-get install -y --no-install-recommends git \
     && rm -rf /var/lib/apt/lists/*
