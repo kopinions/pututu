@@ -27,3 +27,9 @@ jobs:
           PUTUTU_ACCESS_TOKEN_GITEE: ${{ secrets.PUTUTU_ACCESS_TOKEN_GITEE }}
         run: |
           npm run deploy -- --debug
+      - uses: manyuanrong/setup-ossutil@v2.0
+        with:
+          endpoint: "oss-cn-hangzhou.aliyuncs.com"
+          access-key-id: ${{ secrets.PUTUTU_ALIYUN_ACCESS_KEY }}
+          access-key-secret: ${{ secrets.PUTUTU_ALIYUN_ACCESS_SECRET }}
+      - run: ossutil cp -rf public/ oss://kopinions-com.oss-cn-hangzhou.aliyuncs.com
