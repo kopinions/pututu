@@ -94,19 +94,18 @@ ignore:
 
 deploy:
   type: git
-  repo:
-    github:
-      url: https://github.com/kopinions/pututu.git
-      branch: gh-pages
-      token: $PUTUTU_ACCESS_TOKEN_GITHUB
-    coding:
-      url: https://gitee.com/kopinions/pututu.git
-      branch: pages
-      token: $PUTUTU_ACCESS_TOKEN_GITEE
   name: neo
   email: rising.lambda@gmail.com
   message: "feat: update posts"
-
+  repo:
+    gitee:
+      url: https://gitee.com/kopinions/pututu.git
+      branch: pages
+      token: "$PUTUTU_ACCESS_TOKEN_GITEE"
+    github:
+      url: https://github.com/kopinions/pututu.git
+      branch: gh-pages
+      token: "$PUTUTU_ACCESS_TOKEN_GITHUB"
 org:
   emacs: emacs 
   emacsclient: emacsclient 

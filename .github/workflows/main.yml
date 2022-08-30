@@ -24,6 +24,6 @@ jobs:
       - name: deploy
         env:
           PUTUTU_ACCESS_TOKEN_GITHUB: ${{ secrets.PUTUTU_ACCESS_TOKEN_GITHUB }}
-          PUTUTU_ACCESS_TOKEN_GITEE: ${{ secrets.PUTUTU_ACCESS_TOKEN_GITHUB }}
+          PUTUTU_ACCESS_TOKEN_GITEE: ${{ secrets.PUTUTU_ACCESS_TOKEN_GITEE }}
         run: |
           npm run deploy -- --debug
