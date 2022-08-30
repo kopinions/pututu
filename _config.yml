@@ -98,10 +98,6 @@ deploy:
   email: rising.lambda@gmail.com
   message: "feat: update posts"
   repo:
-    gitee:
-      url: https://gitee.com/kopinions/pututu.git
-      branch: pages
-      token: "$PUTUTU_ACCESS_TOKEN_GITEE"
     github:
       url: https://github.com/kopinions/pututu.git
       branch: gh-pages
