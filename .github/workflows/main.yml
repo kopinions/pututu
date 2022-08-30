@@ -32,4 +32,4 @@ jobs:
           endpoint: "oss-cn-hangzhou.aliyuncs.com"
           access-key-id: ${{ secrets.PUTUTU_ALIYUN_ACCESS_KEY }}
           access-key-secret: ${{ secrets.PUTUTU_ALIYUN_ACCESS_SECRET }}
-      - run: ossutil cp -rf public/ oss://kopinions-com.oss-cn-hangzhou.aliyuncs.com
+      - run: ossutil cp -rf public/ oss://kopinions-com/
