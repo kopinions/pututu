@@ -177,8 +177,8 @@ theme_config:
     关于: /about
     Github: https://github.com/kopinions
   footer:
-    # 默认显示 @2019 • author，设置为 false 可隐藏。
-    copyright: '&copy; 2020 ❤️ <a href="">neo</a>'
+    # 默认显示 @2022 • author，设置为 false 可隐藏。
+    copyright: '&copy; 2022 ❤️ <a href="">neo</a>'
     # `由 Hexo 强力驱动` 字样，默认显示，设置为 false 可隐藏。
     powered: false
     # `主题 - Inside` 字样，默认显示，设置为 false 可隐藏。
