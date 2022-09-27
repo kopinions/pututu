@@ -1,0 +1,109 @@
+#+TITLE: 影子寄存器是什么
+#+AUTHOR: 孙建康（rising.lambda）
+#+EMAIL:  rising.lambda@gmail.com
+#+DATE: 2022-09-27
+#+UPDATED: 2022-09-27
+#+LAYOUT: post
+#+EXCERPT:  
+#+DESCRIPTION: 
+#+TAGS: 
+#+CATEGORIES: 
+#+PROPERTY:    header-args        :comments org
+#+PROPERTY:    header-args        :mkdirp yes
+#+OPTIONS:     num:nil toc:nil todo:nil tasks:nil tags:nil \n:nil ^:nil *:t <:t -:t f:t |:t ::t
+#+OPTIONS:     skip:nil author:nil email:nil creator:nil timestamp:nil
+#+INFOJS_OPT:  view:nil toc:nil ltoc:t mouse:underline buttons:0 path:http://orgmode.org/org-info.js
+#+BIND:        org-preview-latex-image-directory ""
+#+OPTIONS:     tex:imagemagick
+
+#+LaTeX_CLASS: article
+#+LaTeX_CLASS_OPTIONS: [12pt]
+#+LaTeX_CLASS_OPTIONS: [koma,a5paper,landscape,twocolumn,utopia,10pt,listings-sv,microtype,paralist]
+# No need for a table of contents, unless your paper is quite long.
+# Use fancy looking fonts. If you don't have MinionPro installed,
+# a good alternative is the Palatino-style pxfonts.
+# See: [[http://www.tug.dk/FontCatalogue/pxfonts/][http://www.tug.dk/FontCatalogue/pxfonts/]]
+#+LATEX_HEADER:\usepackage{xeCJK}
+#+LATEX_HEADER: \usepackage[scaled=.875]{inconsolata}
+#+LATEX_HEADER: \usepackage[T1]{fontenc}
+#+LATEX_HEADER: \usepackage[scaled]{beraserif}
+#+LATEX_HEADER: \usepackage[scaled]{berasans}
+#+LATEX_HEADER: \usepackage[scaled]{beramono}
+# Set the spacing to double, as required in most papers.
+#+LATEX_HEADER: \usepackage{setspace}
+#+LATEX_HEADER: \doublespacing
+# Fix the margins
+#+LATEX_HEADER: \usepackage[margin=1in]{geometry}
+# This line makes lists work better:
+# It eliminates whitespace before/within a list and pushes it tt the left margin
+#+LATEX_HEADER: \usepackage{enumitem}
+#+LATEX_HEADER: \setlist[enumerate,itemize]{noitemsep,nolistsep,leftmargin=*}
+# I always include this for my bibliographies
+#+LATEX_HEADER: \usepackage[notes,isbn=false,backend=biber]{biblatex-chicago}
+
+
+  影子寄存器时 ARM 的设计中引入的一个概念。在 X86, Power PC 处理器设计中都没有这个概念。我们知道 ARM 处理器中总共有 16 个通用寄存器，这 16 个通用寄存器在指令系统中
+需要有 4 bit 来进行编码寻址。但是不同模式下，同样的 4 bit 可能会指向到不同的 “物理寄存器”，这些不同的物理寄存器，我们称之为 "影子寄存器"。不同通用寄存器（寄存器编号），存在的影子寄存器的编号
+也不同，有的没有，有的有 1 个，有的甚至有 5 个。影子寄存器是真正存在的寄存器，只是因为正常模式下，看不到也访问不到这些寄存器，所以影子由此而来。
+
+*** 缩写
+    | 缩写 | 全称                            |                                                                                                     |
+    |------+---------------------------------+-----------------------------------------------------------------------------------------------------|
+    | CPSR | Current Program Status Register |                                                                                                     |
+    | SPSR | Saved Program Status Register   | SPSR 在异常的时候，用来保存CPSR 中的内容，用来在异常处理完毕后跳转回来，每种异常模式都有自己的 SPSR |
+    | LR   | Link Register                   | 存放子程序的返回地址                                                                                |
+    | SP   | Stack Pointer                   | 栈指针                                                                                              |
+    | PC   | Program Counter                 |                                                                                                     |
+
+*** 设计考虑
+    
+**** 设计紧凑
+     ARM 是一个非常紧凑的设计，引入影子寄存器就是这种理念的充分体现。通过引入影子寄存器，可以以一个非常小的代价来使用更多的寄存器数量。
+****** 两种方案实现对比（粗略的）
+       1. 引入更多的寄存器位数
+          * 指令模块（取指，译码，访存，执行，写回） 相应的带宽，中间存储都会变大，相关处理单元也会变大（比如寄存器地址解析）
+          * 指令存储也会变大
+       2. 引入影子寄存器
+          * 只需要在相关影子寄存器通路上加上选择器，以及对应的选择信号就可以实现
+           
+     通过引入影子寄存器，指令可以重复使用相同的寄存器编码，但是在不同模式下，这些编码对应不同的物理寄存器。比如 Abort 模式下的 R13 就和用户模式下的 R13 不同。
+     虽然它们编码一样，但是实际上对应的是不同的物理寄存器（可以将 CPSR 的模式域当作片选）。ARM 中实际的寄存器数目计算如下：
+
+     |   | 名字               |          数量 | 有无影子寄存器 | 影子寄存器数量 | 说明                                                |
+     |---+--------------------+---------------+----------------+----------------+-----------------------------------------------------|
+     |   | 状态寄存器 CPSR    |             1 | Y              |              5 | 五个异常模式下，每个异常模式一个，这些寄存器为 SPSR |
+     |   | 通用寄存器 R0-R7   |             8 | N              |              0 |                                                     |
+     |   | 通用寄存器 R8      |             1 | Y              |              1 | FIQ 模式下的影子寄存器                              |
+     |   | 通用寄存器 R9      |             1 | Y              |              1 | 同上                                                |
+     |   | 通用寄存器 R10     |             1 | Y              |              1 | 同上                                                |
+     |   | 通用寄存器 R11     |             1 | Y              |              1 | 同上                                                |
+     |   | 通用寄存器 R12     |             1 | Y              |              1 | 同上                                                |
+     |   | 通用寄存器 R13(sp) |             1 | Y              |              5 | 五个异常个模式下，每个异常一个                      |
+     |   | 通用寄存器 R14(lr) |             1 | Y              |              5 | 同上                                                |
+     |   | 通用寄存器 R15     |             1 | N              |              0 |                                                     |
+     |---+--------------------+---------------+----------------+----------------+-----------------------------------------------------|
+     |   |                    |            17 |                |             20 |                                                     |
+     | ^ | 正常寄存器总数     | total_regular | 影子寄存器总数 |   total_shadow |                                                     |
+     |   |                    |            37 |                |                |                                                     |
+     | ^ | 寄存器总数         |         total |                |                |                                                     |
+     #+TBLFM: $total_regular=vsum(@I..@II)::$total_shadow=vsum(@I..@II)::$total=$total_regular+$total_shadow
+
+    
+     由于影子寄存器在指令中的寄存器号编码时一样的，因此像如下的指令，在不同模式下会访问到不同的物理寄存器，他们的编号都是 R13。
+     #+BEGIN_SRC asm :eval never :exports code :noweb yes
+       mov R0, R13
+     #+END_SRC
+
+     这意味着：对于存在影子寄存器的情况，我们在异常模式下时没有办法访问正常的寄存器的。对于 R0-R7 这种不存在影子寄存器的情况，没有任何影响。
+**** 保存CPU状态代价小 
+     引入影子寄存器的另外一个好处时，在发生中断或者异常的时候，CPU 会将当前的状态保存在影子寄存器中。从 CPU 的角度来看，CPU 的状态只有俩
+     1. 当前运行指令地址（PC）
+     2. 当前状态寄存器（CPSR）
+      
+     当出现异常或者中断时，CPU 只做如下两个操作就可以保存 CPU 状态
+     - PC 保存在对应模式下的 R14(LR) 寄存器中，
+     - 将 CPSR 存在对应模式下的 SPSR 寄存器中
+
+     对于 R0-R12 来讲，严格意义上这个并不是 CPU 的状态，而是应用的状态，在发生中断的时候，CPU 并不关心这些寄存器。
+     这些寄存器的值需要保存到内存中，这个时非常昂贵的操作。所以 ARM 提供内存访存指令，可以将一组寄存器的值保存到内存，或者将内存的值恢复到一组寄存器中。
+     编译器通过相关的指令进行应用程序的状态的保存。
