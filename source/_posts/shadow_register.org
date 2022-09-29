@@ -48,6 +48,7 @@
   echo "$data"
 #+END_SRC
 
+
 影子寄存器时 ARM 的设计中引入的一个概念。在 X86, Power PC 处理器设计中都没有这个概念。我们知道 ARM 处理器中总共有 16 个通用寄存器，这 16 个通用寄存器在指令系统中
 需要有 4 bit 来进行编码寻址。但是不同模式下，同样的 4 bit 可能会指向到不同的 “物理寄存器”，这些不同的物理寄存器，我们称之为 "影子寄存器"。不同通用寄存器（寄存器编号），存在的影子寄存器的编号
 也不同，有的没有，有的有 1 个，有的甚至有 5 个。影子寄存器是真正存在的寄存器，只是因为正常模式下，看不到也访问不到这些寄存器，所以影子由此而来。
@@ -115,10 +116,11 @@
      编译器通过相关的指令进行应用程序的状态的保存。
 **** 中断处理流程
 ***** CPSR 寄存器
-      #+HEADER: :file ./shadow_register/cpsr.png
+      #+HEADER: :file ./cpsr.png
       #+BEGIN_SRC dot :post attr(width="800", data=*this*) :results drawer
         digraph G {
             rankdir="BT"
+            dpi = 180
             bits [ shape=record label="{{{31|N}|{30|Z}|{29|C}|{28|V}|{27|Q}|{26|\ }|{25|\ }|{24|J}}|f}|{{{23\ \ \ ..\ \ \ 16|undefined }}|s}|{{{15\ \ \ ..\ \ \ 8|undefined}}|x}|{{{7|I}|{6|F}|{5|T}|{4\ \ \ ...\ \ \ 0|mode}}|c}"]
         }
       #+END_SRC
@@ -127,7 +129,7 @@
       :results:
       #+ATTR_LATEX: :width 800
       #+ATTR_ORG: :width 800
-      [[file:./shadow_register/cpsr.png]]
+      [[file:./cpsr.png]]
       :end:
 
       上表的详细解释如下：
@@ -152,3 +154,75 @@
       - mode 位
         - 处理器模式位
 
+
+      CPSR 寄存器被分成 4 段，C X S F。汇编指令中会用到这些信息。
+***** 异常处理介绍
+      所有的处理器设计的时候，都会考虑到异常处理的方式。一般 CPU 都会使用中断向量表的方式进行异常处理。中断向量表是在 CPU 设计的时候，就定下来的，是硬件相关的特性。
+      当异常发生的时候，CPU 会自动进行一些操作（比如 PC 跳转到对应异常对应的地址执行，还有一些保存上下文相关的操作）。ARM 常见的异常向量表如下图所示
+      #+HEADER: :file ./ivt.png
+      #+BEGIN_SRC dot :post attr(width="500", data=*this*) :results drawer
+        digraph G {
+            dpi = 180
+            ivt [
+                 shape=record
+                 label="{0x00000000|0x00000004|0x00000008|0x0000000C|0x000000010|0x00000014|0x00000018|0x0000001C|...}\
+                 |{Reset|Undefined Instruction|Software Interrupt|Prefetch Abort|Data Abort|Reserved|IRQ|FIQ|...}"
+                 ]
+             }
+      #+END_SRC
+
+      #+RESULTS:
+      :results:
+      #+ATTR_LATEX: :width 500
+      #+ATTR_ORG: :width 500
+      [[file:./ivt.png]]
+      :end:
+
+      中断向量表是硬件提供给软件自定义异常处理的接口。当异常发生时，CPU 会自动做如下的处理
+
+      - Link Register(R14) 会保存 PC+4/PC+8 的地址
+      - 对应异常模式下的 SPSR = CPSR(保存异常前的处理器的状态)
+      - 修改 SPSR 的模式（低 4 位到低 0 位）
+      - 根据异常类型，跳转到中断向量表中对应的处理函数处
+
+     软件需要做的是，编写正确的异常处理函数，并且将其正确的连接到中断向量表
+
+     示例代码如下所示
+
+     #+BEGIN_SRC c :eval never :exports code :noweb yes
+       #define VECTOR_TABLE_BASE 0xD0037400  
+  
+       #define Reset_offset 0x0  
+       #define Undef_offset 0x4  
+       #define SVC_offset 0x8  
+       #define Prectch_offset 0xC  
+       #define Data_Abort_offset 0x10  
+       #define IRQ_offset 0x18  
+       #define FIQ_offset 0x1C  
+  
+       #define _PFUNC_Reset (*(unsigned int *)(VECTOR_TABLE_BASE + Reset_offset))  
+       #define _PFUNC_Undef (*(unsigned int *)(VECTOR_TABLE_BASE + Undef_offset))  
+       #define _PFUNC_SVC (*(unsigned int *)(VECTOR_TABLE_BASE + SVC_offset))  
+       #define _PFUNC_Prectch (*(unsigned int *)(VECTOR_TABLE_BASE + Prectch_offset))  
+       #define _PFUNC_Data_Abort (*(unsigned int *)(VECTOR_TABLE_BASE + Data_Abort_offset))  
+       #define _PFUNC_IRQ (*(unsigned int *)(VECTOR_TABLE_BASE + IRQ_offset))  
+       #define _PFUNC_FIQ (*(unsigned int *)(VECTOR_TABLE_BASE + FIQ_offset))  
+       extern void Undef_handle(void);  
+       extern void Reset_handle(void);  
+       extern void SVC_handle(void);  
+       extern void Prectch_handle(void);  
+       extern void Data_Abort_handle(void);  
+       extern void IRQ_handle(void);  
+  
+       void vector_table_init(void)  //将各个中断处理函数地址正确的链接到向量表  
+       {  
+       _PFUNC_Reset = (unsigned int)Reset_handle;  
+       _PFUNC_Undef = (unsigned int)Undef_handle;  
+       _PFUNC_SVC = (unsigned int)SVC_handle;  
+       _PFUNC_Prectch = (unsigned int)Prectch_handle;  
+       _PFUNC_Data_Abort = (unsigned int)Data_Abort_handle;  
+       _PFUNC_IRQ = (unsigned int)IRQ_handle;  
+       _PFUNC_FIQ = (unsigned int)IRQ_handle; //FIQ、IRQ都是采用IRQ中断  
+       }  
+
+     #+END_SRC
