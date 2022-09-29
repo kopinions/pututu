@@ -45,6 +45,7 @@
 #+BEGIN_SRC sh :var data="" :var width="\\textwidth" :results output :exports none
   echo "#+ATTR_LATEX: :width $width"
   echo "#+ATTR_ORG: :width $width"
+  echo "#+HEADER: :fit yes"
   echo "$data"
 #+END_SRC
 
@@ -54,13 +55,15 @@
 也不同，有的没有，有的有 1 个，有的甚至有 5 个。影子寄存器是真正存在的寄存器，只是因为正常模式下，看不到也访问不到这些寄存器，所以影子由此而来。
 
 *** 缩写
-    | 缩写 | 全称                            |                                                                                                     |
-    |------+---------------------------------+-----------------------------------------------------------------------------------------------------|
-    | CPSR | Current Program Status Register |                                                                                                     |
-    | SPSR | Saved Program Status Register   | SPSR 在异常的时候，用来保存CPSR 中的内容，用来在异常处理完毕后跳转回来，每种异常模式都有自己的 SPSR |
-    | LR   | Link Register                   | 存放子程序的返回地址                                                                                |
-    | SP   | Stack Pointer                   | 栈指针                                                                                              |
-    | PC   | Program Counter                 |                                                                                                     |
+    | 缩写  | 全称                            |                                                                                                     |
+    |-------+---------------------------------+-----------------------------------------------------------------------------------------------------|
+    | CPSR  | Current Program Status Register |                                                                                                     |
+    | SPSR  | Saved Program Status Register   | SPSR 在异常的时候，用来保存CPSR 中的内容，用来在异常处理完毕后跳转回来，每种异常模式都有自己的 SPSR |
+    | LR    | Link Register                   | 存放子程序的返回地址                                                                                |
+    | SP    | Stack Pointer                   | 栈指针                                                                                              |
+    | PC    | Program Counter                 |                                                                                                     |
+    | STMDB | STore Multiple Decrement Before | 将多个寄存器的内容放在内存中，其中其中指令中的寄存器制定的是内存的基址。                            |
+    | LDMIA | LoaD Multiple Increment After   |                                                                                                     |
 
 *** 设计考虑
     
@@ -182,47 +185,93 @@
 
       - Link Register(R14) 会保存 PC+4/PC+8 的地址
       - 对应异常模式下的 SPSR = CPSR(保存异常前的处理器的状态)
-      - 修改 SPSR 的模式（低 4 位到低 0 位）
+      - 修改 CPSR 的模式（低 4 位到低 0 位）
       - 根据异常类型，跳转到中断向量表中对应的处理函数处
+      
+****** 配置中断向量表
+       软件需要做的是，编写正确的异常处理函数，并且将其正确的连接到中断向量表
 
-     软件需要做的是，编写正确的异常处理函数，并且将其正确的连接到中断向量表
+       示例代码如下所示
 
-     示例代码如下所示
-
-     #+BEGIN_SRC c :eval never :exports code :noweb yes
-       #define VECTOR_TABLE_BASE 0xD0037400  
+       #+BEGIN_SRC c :eval never :exports code :noweb yes
+         #define VECTOR_TABLE_BASE 0xD0037400  
   
-       #define Reset_offset 0x0  
-       #define Undef_offset 0x4  
-       #define SVC_offset 0x8  
-       #define Prectch_offset 0xC  
-       #define Data_Abort_offset 0x10  
-       #define IRQ_offset 0x18  
-       #define FIQ_offset 0x1C  
+         #define Reset_offset 0x0  
+         #define Undef_offset 0x4  
+         #define SVC_offset 0x8  
+         #define Prectch_offset 0xC  
+         #define Data_Abort_offset 0x10  
+         #define IRQ_offset 0x18  
+         #define FIQ_offset 0x1C  
   
-       #define _PFUNC_Reset (*(unsigned int *)(VECTOR_TABLE_BASE + Reset_offset))  
-       #define _PFUNC_Undef (*(unsigned int *)(VECTOR_TABLE_BASE + Undef_offset))  
-       #define _PFUNC_SVC (*(unsigned int *)(VECTOR_TABLE_BASE + SVC_offset))  
-       #define _PFUNC_Prectch (*(unsigned int *)(VECTOR_TABLE_BASE + Prectch_offset))  
-       #define _PFUNC_Data_Abort (*(unsigned int *)(VECTOR_TABLE_BASE + Data_Abort_offset))  
-       #define _PFUNC_IRQ (*(unsigned int *)(VECTOR_TABLE_BASE + IRQ_offset))  
-       #define _PFUNC_FIQ (*(unsigned int *)(VECTOR_TABLE_BASE + FIQ_offset))  
-       extern void Undef_handle(void);  
-       extern void Reset_handle(void);  
-       extern void SVC_handle(void);  
-       extern void Prectch_handle(void);  
-       extern void Data_Abort_handle(void);  
-       extern void IRQ_handle(void);  
+         #define _PFUNC_Reset (*(unsigned int *)(VECTOR_TABLE_BASE + Reset_offset))  
+         #define _PFUNC_Undef (*(unsigned int *)(VECTOR_TABLE_BASE + Undef_offset))  
+         #define _PFUNC_SVC (*(unsigned int *)(VECTOR_TABLE_BASE + SVC_offset))  
+         #define _PFUNC_Prectch (*(unsigned int *)(VECTOR_TABLE_BASE + Prectch_offset))  
+         #define _PFUNC_Data_Abort (*(unsigned int *)(VECTOR_TABLE_BASE + Data_Abort_offset))  
+         #define _PFUNC_IRQ (*(unsigned int *)(VECTOR_TABLE_BASE + IRQ_offset))  
+         #define _PFUNC_FIQ (*(unsigned int *)(VECTOR_TABLE_BASE + FIQ_offset))  
+         extern void Undef_handle(void);  
+         extern void Reset_handle(void);  
+         extern void SVC_handle(void);  
+         extern void Prectch_handle(void);  
+         extern void Data_Abort_handle(void);  
+         extern void IRQ_handle(void);  
   
-       void vector_table_init(void)  //将各个中断处理函数地址正确的链接到向量表  
-       {  
-       _PFUNC_Reset = (unsigned int)Reset_handle;  
-       _PFUNC_Undef = (unsigned int)Undef_handle;  
-       _PFUNC_SVC = (unsigned int)SVC_handle;  
-       _PFUNC_Prectch = (unsigned int)Prectch_handle;  
-       _PFUNC_Data_Abort = (unsigned int)Data_Abort_handle;  
-       _PFUNC_IRQ = (unsigned int)IRQ_handle;  
-       _PFUNC_FIQ = (unsigned int)IRQ_handle; //FIQ、IRQ都是采用IRQ中断  
-       }  
+         void vector_table_init(void)  //将各个中断处理函数地址正确的链接到向量表  
+         {  
+         _PFUNC_Reset = (unsigned int)Reset_handle;  
+         _PFUNC_Undef = (unsigned int)Undef_handle;  
+         _PFUNC_SVC = (unsigned int)SVC_handle;  
+         _PFUNC_Prectch = (unsigned int)Prectch_handle;  
+         _PFUNC_Data_Abort = (unsigned int)Data_Abort_handle;  
+         _PFUNC_IRQ = (unsigned int)IRQ_handle;  
+         _PFUNC_FIQ = (unsigned int)IRQ_handle; //FIQ、IRQ都是采用IRQ中断  
+         }  
+       #+END_SRC
+****** 保存现场，在中断处理函数之后，恢复现场
+       示例汇编代码如下
+       #+BEGIN_SRC asm :eval never :exports code :noweb yes
+         ;; 将 undefined_address 符号对应地址的数据放到 pc 中，其中 undefined_address 为 0x00000004, 在这个地址中存放的数据
+         ;; 为 undefined_handler 的地址
+         ldr pc, undefined_address                
 
-     #+END_SRC
+         ;;  undefined address 是一个符号，这个符号对应一个 word 的存储, 存储 undefined_handler 的地址
+         undefined_address:
+                 .word undefined_handler
+
+         undefined_handler:
+                 ;; 在 CPU 跳转到这行代码之前，CPU 已经完成了我们前面提到的四个步骤
+                 ;; - Link Register(R14) 会保存 PC+4/PC+8 的地址，此处的 LR 位 undefined 模式下的影子寄存器
+                 ;; - 对应异常模式下的 SPSR = CPSR(保存异常前的处理器的状态) ,此处的 SPSR 位 undefined 模式下的影子寄存器
+                 ;; - 修改 CPSR 的模式（低 4 位到低 0 位）
+                 ;; - 根据异常类型，跳转到中断向量表中对应的处理函数处 (上面的 ldr pc, undefined_address)
+                 ldr sp, 0x40000000
+                 ;; 因为异常处理函数中可能会用到 r0-r12, 所以需要将应用状态寄存器保存下来
+                 ;; lr 是异常处理完后需要返回的地址，同样的需要保存
+                 ;; - sp = sp - 4; sp = lr (分配 4 个字节，保存 lr)
+                 ;; - sp = sp - 4; sp = r12 (再分配 4 个字节，保存 r12)
+                 ;; - ...
+                 ;; - sp = sp - 4; sp = r0
+                 stmdb sp!, {r0-r12, lr}
+                 ;; 将 cpsr 放到 r0
+                 ;; 处理异常
+                 mrs r0, cpsr
+                 ldr r1, message
+                 br print_exception
+
+                 ;; 恢复现场（sp 为栈顶指针，指向的是内存地址）
+                 ;; r0 = sp;  
+                 ;; r1 = sp + 4; (出栈，将栈空间释放)
+                 ;; ...
+                 ;; pc = sp + 4( 这里的 sp + 4 实际指向的是 stmdb 放进去的 lr, 即中断处理完需要返回的地址)
+                 ;;下面语句中的 '^', 会将当前模式下的 SPSR 恢复到 CPSR 中，即 CPSR = undefined 下的 SPSR
+                 ;; pc 直接到中断处理完的返回地址，CPSR 也恢复了，R0-R12 也恢复了，所以中断处理完成，返回
+                 ;; 中断前地方继续执行
+                 ldmia sp! {r0-r12, pc}^
+
+         message:
+                 .string "undefined instruction"
+
+       #+END_SRC
+
