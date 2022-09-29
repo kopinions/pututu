@@ -116,7 +116,7 @@
      编译器通过相关的指令进行应用程序的状态的保存。
 **** 中断处理流程
 ***** CPSR 寄存器
-      #+HEADER: :file ./cpsr.png
+      #+HEADER: :file ./shadow_register/cpsr.png
       #+BEGIN_SRC dot :post attr(width="800", data=*this*) :results drawer
         digraph G {
             rankdir="BT"
@@ -129,7 +129,7 @@
       :results:
       #+ATTR_LATEX: :width 800
       #+ATTR_ORG: :width 800
-      [[file:./cpsr.png]]
+      [[file:./shadow_register/cpsr.png]]
       :end:
 
       上表的详细解释如下：
@@ -159,7 +159,7 @@
 ***** 异常处理介绍
       所有的处理器设计的时候，都会考虑到异常处理的方式。一般 CPU 都会使用中断向量表的方式进行异常处理。中断向量表是在 CPU 设计的时候，就定下来的，是硬件相关的特性。
       当异常发生的时候，CPU 会自动进行一些操作（比如 PC 跳转到对应异常对应的地址执行，还有一些保存上下文相关的操作）。ARM 常见的异常向量表如下图所示
-      #+HEADER: :file ./ivt.png
+      #+HEADER: :file ./shadow_register/ivt.png
       #+BEGIN_SRC dot :post attr(width="500", data=*this*) :results drawer
         digraph G {
             dpi = 180
@@ -175,7 +175,7 @@
       :results:
       #+ATTR_LATEX: :width 500
       #+ATTR_ORG: :width 500
-      [[file:./ivt.png]]
+      [[file:./shadow_register/ivt.png]]
       :end:
 
       中断向量表是硬件提供给软件自定义异常处理的接口。当异常发生时，CPU 会自动做如下的处理
